@@ -1,0 +1,43 @@
+# .gitignore
+
+# Node.js dependencies
+/node_modules
+
+# TypeScript build artifacts
+/dist
+/tsconfig.tsbuildinfo
+
+# Fastify logs
+/logs
+
+# IDEs and editors
+/.vscode
+/.idea
+*.swp
+*.swo
+*.swn
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Environment variables and configuration files
+.env
+.env.*
+!.env.example
+
+# NPM debug log
+npm-debug.log*
+
+# Yarn integrity file
+.yarn-integrity
+
+.eslintcache
+yarn-error.log
+/.yarn
+
+# Generated docs
+/docs
+
+
+.cache

@@ -1,0 +1,114 @@
+// True Fit Job Applicants Selection System
+// Database schema for matching applicants to jobs
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =====================================================
+// CORE ENTITIES
+// =====================================================
+
+model Company {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String   @unique @db.Text
+  description String?  @db.Text
+  website     String?  @db.Text
+  email       String?  @db.Text
+  phone       String?  @db.Text
+  address     String?  @db.Text
+  createdAt   DateTime @default(now()) @db.Timestamptz
+  updatedAt   DateTime @updatedAt @db.Timestamptz
+
+  // Relationships
+  branches Branch[]
+  users    User[]
+
+  // Performance indexes
+  @@index([name])
+  @@map("companies")
+}
+
+model Branch {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String   @db.Text
+  city      String?  @db.Text
+  country   String?  @db.Text
+  address   String?  @db.Text
+  email     String?  @db.Text
+  phone     String?  @db.Text
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  // Foreign Keys
+  companyId String  @db.Uuid
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  // Business constraints
+  @@unique([companyId, name]) // Prevent duplicate branch names within same company
+  @@index([city, country])    // Geographic queries
+  @@map("branches")
+}
+
+model User {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email        String    @unique @db.Text
+  firstName    String    @db.Text
+  lastName     String    @db.Text
+  passwordHash String    @db.Text
+  role         UserRole  @default(RECRUITER)
+  lastLoginAt  DateTime? @db.Timestamptz
+  createdAt    DateTime  @default(now()) @db.Timestamptz
+  updatedAt    DateTime  @updatedAt @db.Timestamptz
+
+  // Foreign Keys - Optional because system admins might not belong to a specific company
+  companyId String? @db.Uuid
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+
+  // Relationships
+  sessions UserSession[]
+
+  // Performance indexes
+  @@index([email])
+  @@index([role])
+  @@index([companyId])
+  @@map("users")
+}
+
+model UserSession {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  token     String   @unique @db.Text // JWT ID for revocation
+  isActive  Boolean  @default(true)
+  expiresAt DateTime @db.Timestamptz
+  userAgent String?  @db.Text
+  ipAddress String?  @db.Text
+  createdAt DateTime @default(now()) @db.Timestamptz
+
+  // Foreign Keys
+  userId String @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Performance indexes
+  @@index([token])
+  @@index([userId, isActive])
+  @@index([expiresAt])
+  @@map("user_sessions")
+}
+
+// =====================================================
+// ENUMS
+// =====================================================
+
+enum UserRole {
+  ADMIN           // System-wide administrator
+  RECRUITER       // Can manage jobs and view applications
+  READONLY        // View-only access
+
+  @@map("user_role")
+}
+
