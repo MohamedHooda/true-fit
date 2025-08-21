@@ -12,27 +12,22 @@ import {
     ErrorResponseSchema,
 } from "./schemas"
 import {
-    createUserHandlers,
-    getUsersHandler,
-    getUserByIdHandler,
-    createUserHandler,
-    updateUserHandler,
-    deleteUserHandler,
-    loginHandler,
-    getMeHandler,
-    logoutHandler,
-    logoutAllHandler,
-    changePasswordHandler,
+    getUsers,
+    getUserById,
+    createUser,
+    updateUser,
+    deleteUser,
+    login,
+    getMe,
+    logout,
+    logoutAll,
+    changePassword,
 } from "./handlers"
-import getUserService from "services/users"
-import getUserPool from "persistence/db/pool/users"
+
 import jwtAuth from "auth/jwtAuth"
 
 const usersRoutes: FastifyPluginAsync = async (fastify) => {
-    // Initialize dependencies
-    const userPool = getUserPool(fastify.db)
-    const userService = getUserService(userPool, fastify.events)
-    const handlers = createUserHandlers(userService)
+    // Register authentication middleware
     fastify.register(jwtAuth)
 
     // Authentication routes (no auth required)
@@ -51,7 +46,7 @@ const usersRoutes: FastifyPluginAsync = async (fastify) => {
                 },
             },
         },
-        loginHandler.bind(handlers),
+        login,
     )
 
     // Current user routes (auth required)
@@ -70,7 +65,7 @@ const usersRoutes: FastifyPluginAsync = async (fastify) => {
                 },
             },
         },
-        getMeHandler.bind(handlers),
+        getMe,
     )
 
     fastify.post(
@@ -87,7 +82,7 @@ const usersRoutes: FastifyPluginAsync = async (fastify) => {
                 },
             },
         },
-        logoutHandler.bind(handlers),
+        logout,
     )
 
     fastify.post(
@@ -104,7 +99,7 @@ const usersRoutes: FastifyPluginAsync = async (fastify) => {
                 },
             },
         },
-        logoutAllHandler.bind(handlers),
+        logoutAll,
     )
 
     fastify.post(
@@ -123,7 +118,7 @@ const usersRoutes: FastifyPluginAsync = async (fastify) => {
                 },
             },
         },
-        changePasswordHandler.bind(handlers),
+        changePassword,
     )
 
     // User management routes (admin/recruiter access)
@@ -146,7 +141,7 @@ const usersRoutes: FastifyPluginAsync = async (fastify) => {
                 },
             },
         },
-        getUsersHandler.bind(handlers),
+        getUsers,
     )
 
     fastify.get(
@@ -172,7 +167,7 @@ const usersRoutes: FastifyPluginAsync = async (fastify) => {
                 },
             },
         },
-        getUserByIdHandler.bind(handlers),
+        getUserById,
     )
 
     fastify.post(
@@ -193,7 +188,7 @@ const usersRoutes: FastifyPluginAsync = async (fastify) => {
                 },
             },
         },
-        createUserHandler.bind(handlers),
+        createUser,
     )
 
     fastify.put(
@@ -220,7 +215,7 @@ const usersRoutes: FastifyPluginAsync = async (fastify) => {
                 },
             },
         },
-        updateUserHandler.bind(handlers),
+        updateUser,
     )
 
     fastify.delete(
@@ -246,7 +241,7 @@ const usersRoutes: FastifyPluginAsync = async (fastify) => {
                 },
             },
         },
-        deleteUserHandler.bind(handlers),
+        deleteUser,
     )
 }
 

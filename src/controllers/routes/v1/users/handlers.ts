@@ -1,240 +1,212 @@
 import { FastifyRequest, FastifyReply } from "fastify"
-import { IUserService } from "services/users"
 import { UserCreateRequest, UserUpdate, LoginRequest } from "types/user"
-
-export interface UserHandlers {
-    userService: IUserService
-}
-
-export function createUserHandlers(userService: IUserService): UserHandlers {
-    return { userService }
-}
+import { mapToErrorResponse } from "controllers/errors"
+import { ServiceError, ServiceErrorType } from "types/serviceError"
+import { RouteHandler } from "fastify"
 
 // Get all users
-export async function getUsersHandler(
-    this: UserHandlers,
-    request: FastifyRequest,
-    reply: FastifyReply,
-) {
+export const getUsers: RouteHandler = async function (request, reply) {
+    const service = this.services.getUserService()
     try {
-        const users = await this.userService.getUsers()
+        const users = await service.getUsers()
         return { users }
-    } catch (error) {
-        request.log.error(error, "Failed to get users")
-        return reply.code(500).send({ error: "Failed to get users" })
+    } catch (err) {
+        const resp = mapToErrorResponse(err, "Failed to get users")
+        return reply.code(resp.code).send(resp.returnError())
     }
 }
 
 // Get user by ID
-export async function getUserByIdHandler(
-    this: UserHandlers,
-    request: FastifyRequest<{
-        Params: { id: string }
-    }>,
-    reply: FastifyReply,
-) {
+export const getUserById: RouteHandler<{
+    Params: { id: string }
+}> = async function (request, reply) {
+    const service = this.services.getUserService()
     try {
-        const user = await this.userService.getUserById(request.params.id)
+        const user = await service.getUserById(request.params.id)
 
         if (!user) {
-            return reply.code(404).send({ error: "User not found" })
+            const resp = mapToErrorResponse(
+                new ServiceError(ServiceErrorType.NotFound, "User not found"),
+                "User not found",
+            )
+            return reply.code(resp.code).send(resp.returnError())
         }
 
         return { user }
-    } catch (error) {
-        request.log.error(error, "Failed to get user")
-        return reply.code(500).send({ error: "Failed to get user" })
+    } catch (err) {
+        const resp = mapToErrorResponse(err, "Failed to get user")
+        return reply.code(resp.code).send(resp.returnError())
     }
 }
 
 // Create user
-export async function createUserHandler(
-    this: UserHandlers,
-    request: FastifyRequest<{
-        Body: UserCreateRequest
-    }>,
-    reply: FastifyReply,
-) {
+export const createUser: RouteHandler<{
+    Body: UserCreateRequest
+}> = async function (request, reply) {
+    const service = this.services.getUserService()
     try {
-        const user = await this.userService.createUser(request.body)
+        const user = await service.createUser(request.body)
         return reply.code(201).send({ user })
-    } catch (error) {
-        request.log.error(error, "Failed to create user")
-
-        if (
-            error instanceof Error &&
-            error.message.includes("unique constraint")
-        ) {
-            return reply
-                .code(409)
-                .send({ error: "User with this email already exists" })
-        }
-
-        return reply.code(500).send({ error: "Failed to create user" })
+    } catch (err) {
+        const resp = mapToErrorResponse(err, "Failed to create user")
+        return reply.code(resp.code).send(resp.returnError())
     }
 }
 
 // Update user
-export async function updateUserHandler(
-    this: UserHandlers,
-    request: FastifyRequest<{
-        Params: { id: string }
-        Body: UserUpdate
-    }>,
-    reply: FastifyReply,
-) {
+export const updateUser: RouteHandler<{
+    Params: { id: string }
+    Body: UserUpdate
+}> = async function (request, reply) {
+    const service = this.services.getUserService()
     try {
-        const user = await this.userService.updateUser(
-            request.params.id,
-            request.body,
-        )
+        const user = await service.updateUser(request.params.id, request.body)
         return { user }
-    } catch (error) {
-        request.log.error(error, "Failed to update user")
-        return reply.code(500).send({ error: "Failed to update user" })
+    } catch (err) {
+        const resp = mapToErrorResponse(err, "Failed to update user")
+        return reply.code(resp.code).send(resp.returnError())
     }
 }
 
 // Delete user
-export async function deleteUserHandler(
-    this: UserHandlers,
-    request: FastifyRequest<{
-        Params: { id: string }
-    }>,
-    reply: FastifyReply,
-) {
+export const deleteUser: RouteHandler<{
+    Params: { id: string }
+}> = async function (request, reply) {
+    const service = this.services.getUserService()
     try {
-        await this.userService.deleteUser(request.params.id)
+        await service.deleteUser(request.params.id)
         return { message: "User deleted successfully" }
-    } catch (error) {
-        request.log.error(error, "Failed to delete user")
-        return reply.code(500).send({ error: "Failed to delete user" })
+    } catch (err) {
+        const resp = mapToErrorResponse(err, "Failed to delete user")
+        return reply.code(resp.code).send(resp.returnError())
     }
 }
 
 // Login
-export async function loginHandler(
-    this: UserHandlers,
-    request: FastifyRequest<{
-        Body: LoginRequest
-    }>,
-    reply: FastifyReply,
-) {
+export const login: RouteHandler<{
+    Body: LoginRequest
+}> = async function (request, reply) {
+    const service = this.services.getUserService()
     try {
-        const result = await this.userService.login(
+        const result = await service.login(
             request.body,
             request.headers["user-agent"],
             request.ip,
         )
         return result
-    } catch (error) {
-        request.log.error(error, "Failed to login")
-
-        if (error instanceof Error && error.message === "Invalid credentials") {
-            return reply.code(401).send({ error: "Invalid credentials" })
-        }
-
-        return reply.code(500).send({ error: "Login failed" })
+    } catch (err) {
+        const resp = mapToErrorResponse(err, "Failed to login")
+        return reply.code(resp.code).send(resp.returnError())
     }
 }
 
 // Get current user (me)
-export async function getMeHandler(
-    this: UserHandlers,
-    request: FastifyRequest,
-    reply: FastifyReply,
-) {
+export const getMe: RouteHandler = async function (request, reply) {
+    const service = this.services.getUserService()
     try {
         if (!request.user) {
-            return reply.code(401).send({ error: "Not authenticated" })
+            const resp = mapToErrorResponse(
+                new ServiceError(
+                    ServiceErrorType.Forbidden,
+                    "Not authenticated",
+                ),
+                "Not authenticated",
+            )
+            return reply.code(resp.code).send(resp.returnError())
         }
 
-        const user = await this.userService.getUserById(request.user.id)
+        const user = await service.getUserById(request.user.id)
 
         if (!user) {
-            return reply.code(404).send({ error: "User not found" })
+            const resp = mapToErrorResponse(
+                new ServiceError(ServiceErrorType.NotFound, "User not found"),
+                "User not found",
+            )
+            return reply.code(resp.code).send(resp.returnError())
         }
 
         return { user }
-    } catch (error) {
-        request.log.error(error, "Failed to get current user")
-        return reply.code(500).send({ error: "Failed to get current user" })
+    } catch (err) {
+        const resp = mapToErrorResponse(err, "Failed to get current user")
+        return reply.code(resp.code).send(resp.returnError())
     }
 }
 
 // Logout
-export async function logoutHandler(
-    this: UserHandlers,
-    request: FastifyRequest,
-    reply: FastifyReply,
-) {
+export const logout: RouteHandler = async function (request, reply) {
+    const service = this.services.getUserService()
     try {
         if (!request.user) {
-            return reply.code(401).send({ error: "Not authenticated" })
+            const resp = mapToErrorResponse(
+                new ServiceError(
+                    ServiceErrorType.Forbidden,
+                    "Not authenticated",
+                ),
+                "Not authenticated",
+            )
+            return reply.code(resp.code).send(resp.returnError())
         }
 
-        await this.userService.logout(request.user.sessionId)
+        await service.logout(request.user.sessionId)
         return { message: "Logged out successfully" }
-    } catch (error) {
-        request.log.error(error, "Failed to logout")
-        return reply.code(500).send({ error: "Logout failed" })
+    } catch (err) {
+        const resp = mapToErrorResponse(err, "Failed to logout")
+        return reply.code(resp.code).send(resp.returnError())
     }
 }
 
 // Logout all sessions
-export async function logoutAllHandler(
-    this: UserHandlers,
-    request: FastifyRequest,
-    reply: FastifyReply,
-) {
+export const logoutAll: RouteHandler = async function (request, reply) {
+    const service = this.services.getUserService()
     try {
         if (!request.user) {
-            return reply.code(401).send({ error: "Not authenticated" })
+            const resp = mapToErrorResponse(
+                new ServiceError(
+                    ServiceErrorType.Forbidden,
+                    "Not authenticated",
+                ),
+                "Not authenticated",
+            )
+            return reply.code(resp.code).send(resp.returnError())
         }
 
-        await this.userService.logoutAll(request.user.id)
+        await service.logoutAll(request.user.id)
         return { message: "Logged out from all devices successfully" }
-    } catch (error) {
-        request.log.error(error, "Failed to logout all")
-        return reply.code(500).send({ error: "Logout all failed" })
+    } catch (err) {
+        const resp = mapToErrorResponse(err, "Failed to logout all")
+        return reply.code(resp.code).send(resp.returnError())
     }
 }
 
 // Change password
-export async function changePasswordHandler(
-    this: UserHandlers,
-    request: FastifyRequest<{
-        Body: {
-            currentPassword: string
-            newPassword: string
-        }
-    }>,
-    reply: FastifyReply,
-) {
+export const changePassword: RouteHandler<{
+    Body: {
+        currentPassword: string
+        newPassword: string
+    }
+}> = async function (request, reply) {
+    const service = this.services.getUserService()
     try {
         if (!request.user) {
-            return reply.code(401).send({ error: "Not authenticated" })
+            const resp = mapToErrorResponse(
+                new ServiceError(
+                    ServiceErrorType.Forbidden,
+                    "Not authenticated",
+                ),
+                "Not authenticated",
+            )
+            return reply.code(resp.code).send(resp.returnError())
         }
 
-        await this.userService.changePassword(
+        await service.changePassword(
             request.user.id,
             request.body.currentPassword,
             request.body.newPassword,
         )
 
         return { message: "Password changed successfully" }
-    } catch (error) {
-        request.log.error(error, "Failed to change password")
-
-        if (
-            error instanceof Error &&
-            error.message === "Current password is incorrect"
-        ) {
-            return reply
-                .code(400)
-                .send({ error: "Current password is incorrect" })
-        }
-
-        return reply.code(500).send({ error: "Failed to change password" })
+    } catch (err) {
+        const resp = mapToErrorResponse(err, "Failed to change password")
+        return reply.code(resp.code).send(resp.returnError())
     }
 }

@@ -132,18 +132,6 @@ class UserService implements IUserService {
 
         const createdUser = await this.pool.createUser(userToCreate)
 
-        // Emit user created event
-        // TODO: Add USER_CREATED event type to TrueFitEventTypes
-        // await this.events.dispatchEvent({
-        //     type: "USER_CREATED",
-        //     payload: {
-        //         userId: createdUser.id,
-        //         email: createdUser.email,
-        //         role: createdUser.role,
-        //         companyId: createdUser.companyId,
-        //     }
-        // })
-
         return createdUser
     }
 

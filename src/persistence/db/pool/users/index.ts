@@ -8,6 +8,8 @@ import {
     UserWithSessions,
     UserSession,
 } from "types/user"
+import { Logger } from "types/logging"
+import { handleDBError } from "helpers/serviceError"
 
 export interface UserPool {
     /**
@@ -109,85 +111,116 @@ export interface UserPool {
 }
 
 class UserPoolImpl implements UserPool {
-    constructor(private readonly prisma: PrismaClient) {}
+    constructor(
+        private readonly prisma: PrismaClient,
+        private readonly logger: Logger,
+    ) {}
 
     async getUserById(id: string): Promise<UserWithSessions | null> {
-        const user = await this.prisma.user.findUnique({
-            where: { id },
-            include: {
-                sessions: {
-                    where: { isActive: true },
-                    orderBy: { createdAt: "desc" },
+        try {
+            const user = await this.prisma.user.findUnique({
+                where: { id },
+                include: {
+                    sessions: {
+                        where: { isActive: true },
+                        orderBy: { createdAt: "desc" },
+                    },
                 },
-            },
-        })
+            })
 
-        return user
+            return user
+        } catch (err) {
+            handleDBError(err, this.logger)
+        }
     }
 
     async getUserByEmail(email: string): Promise<User | null> {
-        return this.prisma.user.findUnique({
-            where: { email },
-        })
+        try {
+            return this.prisma.user.findUnique({
+                where: { email },
+            })
+        } catch (err) {
+            handleDBError(err, this.logger)
+        }
     }
 
     async createUser(user: UserCreate): Promise<UserCreateResponse> {
-        const created = await this.prisma.user.create({
-            data: user,
-            select: {
-                id: true,
-                email: true,
-                firstName: true,
-                lastName: true,
-                role: true,
-                companyId: true,
-                createdAt: true,
-            },
-        })
+        try {
+            const created = await this.prisma.user.create({
+                data: user,
+                select: {
+                    id: true,
+                    email: true,
+                    firstName: true,
+                    lastName: true,
+                    role: true,
+                    companyId: true,
+                    createdAt: true,
+                },
+            })
 
-        return created
+            return created
+        } catch (err) {
+            handleDBError(err, this.logger)
+        }
     }
 
     async deleteUser(id: string): Promise<void> {
-        await this.prisma.user.delete({
-            where: { id },
-        })
+        try {
+            await this.prisma.user.delete({
+                where: { id },
+            })
+        } catch (err) {
+            handleDBError(err, this.logger)
+        }
     }
 
     async getUsers(): Promise<UserWithSessions[]> {
-        return this.prisma.user.findMany({
-            include: {
-                sessions: {
-                    where: { isActive: true },
-                    orderBy: { createdAt: "desc" },
+        try {
+            return this.prisma.user.findMany({
+                include: {
+                    sessions: {
+                        where: { isActive: true },
+                        orderBy: { createdAt: "desc" },
+                    },
                 },
-            },
-            orderBy: { createdAt: "desc" },
-            take: 50,
-            skip: 0,
-        })
+                orderBy: { createdAt: "desc" },
+                take: 50,
+                skip: 0,
+            })
+        } catch (err) {
+            handleDBError(err, this.logger)
+        }
     }
 
     async updateUser(id: string, user: UserUpdate): Promise<User> {
-        return this.prisma.user.update({
-            where: { id },
-            data: user,
-        })
+        try {
+            return this.prisma.user.update({
+                where: { id },
+                data: user,
+            })
+        } catch (err) {
+            handleDBError(err, this.logger)
+        }
     }
 
     async authenticateUser(
         email: string,
         password: string,
     ): Promise<User | null> {
-        const user = await this.prisma.user.findUnique({
-            where: { email },
-        })
+        try {
+            const user = await this.prisma.user.findUnique({
+                where: { email },
+            })
 
-        if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
-            return null
+            if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+                return null
+            }
+
+            return user
+        } catch (err) {
+            handleDBError(err, this.logger)
         }
-
-        return user
     }
 
     async createSession(
@@ -197,54 +230,77 @@ class UserPoolImpl implements UserPool {
         userAgent?: string,
         ipAddress?: string,
     ): Promise<UserSession> {
-        return this.prisma.userSession.create({
-            data: {
-                token: sessionId,
-                userId,
-                expiresAt,
-                userAgent,
-                ipAddress,
-            },
-        })
+        try {
+            return this.prisma.userSession.create({
+                data: {
+                    token: sessionId,
+                    userId,
+                    expiresAt,
+                    userAgent,
+                    ipAddress,
+                },
+            })
+        } catch (err) {
+            handleDBError(err, this.logger)
+        }
     }
 
     async getSessionWithUser(
         sessionId: string,
     ): Promise<(UserSession & { user: User }) | null> {
-        return this.prisma.userSession.findFirst({
-            where: {
-                token: sessionId,
-                isActive: true,
-                expiresAt: { gt: new Date() },
-            },
-            include: {
-                user: true,
-            },
-        })
+        try {
+            return this.prisma.userSession.findFirst({
+                where: {
+                    token: sessionId,
+                    isActive: true,
+                    expiresAt: { gt: new Date() },
+                },
+                include: {
+                    user: true,
+                },
+            })
+        } catch (err) {
+            handleDBError(err, this.logger)
+        }
     }
 
     async deactivateSession(sessionId: string): Promise<void> {
-        await this.prisma.userSession.update({
-            where: { id: sessionId },
-            data: { isActive: false },
-        })
+        try {
+            await this.prisma.userSession.update({
+                where: { id: sessionId },
+                data: { isActive: false },
+            })
+        } catch (err) {
+            handleDBError(err, this.logger)
+        }
     }
 
     async deactivateAllUserSessions(userId: string): Promise<void> {
-        await this.prisma.userSession.updateMany({
-            where: { userId },
-            data: { isActive: false },
-        })
+        try {
+            await this.prisma.userSession.updateMany({
+                where: { userId },
+                data: { isActive: false },
+            })
+        } catch (err) {
+            handleDBError(err, this.logger)
+        }
     }
 
     async updateLastLogin(userId: string): Promise<void> {
-        await this.prisma.user.update({
-            where: { id: userId },
-            data: { lastLoginAt: new Date() },
-        })
+        try {
+            await this.prisma.user.update({
+                where: { id: userId },
+                data: { lastLoginAt: new Date() },
+            })
+        } catch (err) {
+            handleDBError(err, this.logger)
+        }
     }
 }
 
-export default function getUserPool(prisma: PrismaClient): UserPool {
-    return new UserPoolImpl(prisma)
+export default function getUserPool(
+    prisma: PrismaClient,
+    logger: Logger,
+): UserPool {
+    return new UserPoolImpl(prisma, logger)
 }
