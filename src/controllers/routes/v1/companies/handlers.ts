@@ -1,4 +1,3 @@
-import { FastifyRequest, FastifyReply, FastifyInstance } from "fastify"
 import { CompanyCreateRequest, CompanyUpdate } from "types/company"
 import { mapToErrorResponse } from "controllers/errors"
 import { ServiceError, ServiceErrorType } from "types/serviceError"
@@ -10,7 +9,7 @@ export const getCompanies: RouteHandler<{
         limit?: number
         offset?: number
     }
-}> = async function (this: FastifyInstance, request, reply) {
+}> = async function (this, request, reply) {
     const service = this.services.getCompanyService()
     try {
         const { limit, offset } = request.query
@@ -25,7 +24,7 @@ export const getCompanies: RouteHandler<{
 // Get company by ID
 export const getCompanyById: RouteHandler<{
     Params: { id: string }
-}> = async function (this: FastifyInstance, request, reply) {
+}> = async function (this, request, reply) {
     const service = this.services.getCompanyService()
     try {
         const company = await service.getCompanyById(request.params.id)
@@ -51,7 +50,7 @@ export const getCompanyById: RouteHandler<{
 // Create company
 export const createCompany: RouteHandler<{
     Body: CompanyCreateRequest
-}> = async function (this: FastifyInstance, request, reply) {
+}> = async function (this, request, reply) {
     const service = this.services.getCompanyService()
     try {
         const company = await service.createCompany(request.body)
@@ -66,7 +65,7 @@ export const createCompany: RouteHandler<{
 export const updateCompany: RouteHandler<{
     Params: { id: string }
     Body: CompanyUpdate
-}> = async function (this: FastifyInstance, request, reply) {
+}> = async function (this, request, reply) {
     const service = this.services.getCompanyService()
     try {
         const company = await service.updateCompany(
@@ -83,7 +82,7 @@ export const updateCompany: RouteHandler<{
 // Delete company
 export const deleteCompany: RouteHandler<{
     Params: { id: string }
-}> = async function (this: FastifyInstance, request, reply) {
+}> = async function (this, request, reply) {
     const service = this.services.getCompanyService()
     try {
         await service.deleteCompany(request.params.id)

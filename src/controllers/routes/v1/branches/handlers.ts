@@ -11,7 +11,7 @@ export const getBranches: RouteHandler<{
         offset?: number
         companyId?: string
     }
-}> = async function (request, reply) {
+}> = async function (this, request, reply) {
     const service = this.services.getBranchService()
     try {
         const { limit, offset, companyId } = request.query
@@ -34,7 +34,7 @@ export const getBranches: RouteHandler<{
 // Get branch by ID
 export const getBranchById: RouteHandler<{
     Params: { id: string }
-}> = async function (request, reply) {
+}> = async function (this, request, reply) {
     const service = this.services.getBranchService()
     try {
         const branch = await service.getBranchById(request.params.id)
@@ -57,7 +57,7 @@ export const getBranchById: RouteHandler<{
 // Create branch
 export const createBranch: RouteHandler<{
     Body: BranchCreateRequest
-}> = async function (request, reply) {
+}> = async function (this, request, reply) {
     const service = this.services.getBranchService()
     try {
         const branch = await service.createBranch(request.body)
@@ -72,7 +72,7 @@ export const createBranch: RouteHandler<{
 export const updateBranch: RouteHandler<{
     Params: { id: string }
     Body: BranchUpdate
-}> = async function (request, reply) {
+}> = async function (this, request, reply) {
     const service = this.services.getBranchService()
     try {
         const branch = await service.updateBranch(
@@ -89,7 +89,7 @@ export const updateBranch: RouteHandler<{
 // Delete branch
 export const deleteBranch: RouteHandler<{
     Params: { id: string }
-}> = async function (request, reply) {
+}> = async function (this, request, reply) {
     const service = this.services.getBranchService()
     try {
         await service.deleteBranch(request.params.id)

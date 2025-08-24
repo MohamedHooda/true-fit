@@ -130,8 +130,14 @@ class JobService implements IJobService {
         return updatedJob
     }
 
-    async getJobStats(companyId: string): Promise<JobStats> {
-        return this.pool.getJobsStats(companyId)
+    async getJobStats(
+        branchId?: string,
+        companyId?: string,
+    ): Promise<JobStats> {
+        if (!companyId && !branchId) {
+            throw new Error("Either branchId or companyId must be provided")
+        }
+        return this.pool.getJobsStats(companyId || branchId!)
     }
 }
 

@@ -286,8 +286,14 @@ class UserService implements IUserService {
         currentPassword: string,
         newPassword: string,
     ): Promise<void> {
-        // Get user
-        const user = await this.pool.getUserByEmail("")
+        // Get user to verify they exist and get their email
+        const userWithSessions = await this.pool.getUserById(userId)
+        if (!userWithSessions) {
+            throw new Error("User not found")
+        }
+
+        // Get user with password hash for verification
+        const user = await this.pool.getUserByEmail(userWithSessions.email)
         if (!user) {
             throw new Error("User not found")
         }
