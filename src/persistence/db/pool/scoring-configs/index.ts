@@ -2,57 +2,50 @@ import { PrismaClient } from "@prisma/client"
 import { handleDBError } from "helpers/serviceError"
 import { Logger } from "types/logging"
 import {
-    ScoringConfig,
-    ScoringConfigWithJob,
     ScoringConfigCreate,
     ScoringConfigUpdate,
-    ScoringResult,
+    ScoringConfigWithDetails,
+    ScoringPreview,
 } from "types/scoring"
-import { AssessmentScoreBreakdown } from "types/assessment"
 
 export interface ScoringConfigPool {
     /**
      * Get a scoring config by ID
      * @param {string} id - The ID of the config to get
-     * @returns {Promise<ScoringConfig | null>} - The scoring config
+     * @returns {Promise<ScoringConfigWithDetails | null>} - The config with details
      */
-    getScoringConfigById(id: string): Promise<ScoringConfig | null>
+    getScoringConfigById(id: string): Promise<ScoringConfigWithDetails | null>
 
     /**
-     * Get a scoring config with job details
-     * @param {string} id - The ID of the config to get
-     * @returns {Promise<ScoringConfigWithJob | null>} - The config with job details
+     * Get all scoring configs with optional filters
+     * @param {boolean} isDefault - Filter by default status
+     * @param {string} jobId - Filter by job ID
+     * @returns {Promise<ScoringConfigWithDetails[]>} - The configs with details
      */
-    getScoringConfigWithJob(id: string): Promise<ScoringConfigWithJob | null>
-
-    /**
-     * Get scoring config by job ID
-     * @param {string} jobId - The ID of the job
-     * @returns {Promise<ScoringConfig | null>} - The scoring config for the job
-     */
-    getScoringConfigByJobId(jobId: string): Promise<ScoringConfig | null>
-
-    /**
-     * Get the default scoring config
-     * @returns {Promise<ScoringConfig | null>} - The default scoring config
-     */
-    getDefaultScoringConfig(): Promise<ScoringConfig | null>
-
-    /**
-     * Get scoring configs by company ID
-     * @param {string} companyId - The ID of the company
-     * @returns {Promise<ScoringConfigWithJob[]>} - The scoring configs for the company
-     */
-    getScoringConfigsByCompanyId(
-        companyId: string,
-    ): Promise<ScoringConfigWithJob[]>
+    getScoringConfigs(
+        isDefault?: boolean,
+        jobId?: string,
+    ): Promise<ScoringConfigWithDetails[]>
 
     /**
      * Create a scoring config
      * @param {ScoringConfigCreate} config - The config to create
-     * @returns {Promise<ScoringConfig>} - The created config
+     * @returns {Promise<ScoringConfigWithDetails>} - The created config
      */
-    createScoringConfig(config: ScoringConfigCreate): Promise<ScoringConfig>
+    createScoringConfig(
+        config: ScoringConfigCreate,
+    ): Promise<ScoringConfigWithDetails>
+
+    /**
+     * Update a scoring config
+     * @param {string} id - The ID of the config to update
+     * @param {ScoringConfigUpdate} config - The config data to update
+     * @returns {Promise<ScoringConfigWithDetails>} - The updated config
+     */
+    updateScoringConfig(
+        id: string,
+        config: ScoringConfigUpdate,
+    ): Promise<ScoringConfigWithDetails>
 
     /**
      * Delete a scoring config
@@ -62,62 +55,26 @@ export interface ScoringConfigPool {
     deleteScoringConfig(id: string): Promise<void>
 
     /**
-     * Get all scoring configs
-     * @param {number} limit - Maximum number of configs to return
-     * @param {number} offset - Number of configs to skip
-     * @returns {Promise<ScoringConfigWithJob[]>} - The scoring configs with job details
+     * Apply scoring config to a job
+     * @param {string} configId - The ID of the config to apply
+     * @param {string} jobId - The ID of the job to apply to
+     * @returns {Promise<ScoringConfigWithDetails>} - The applied config
      */
-    getScoringConfigs(
-        limit?: number,
-        offset?: number,
-    ): Promise<ScoringConfigWithJob[]>
-
-    /**
-     * Update a scoring config
-     * @param {string} id - The ID of the config to update
-     * @param {ScoringConfigUpdate} config - The config data to update
-     * @returns {Promise<ScoringConfig>} - The updated config
-     */
-    updateScoringConfig(
-        id: string,
-        config: ScoringConfigUpdate,
-    ): Promise<ScoringConfig>
-
-    /**
-     * Set a config as the default (unsets all other defaults)
-     * @param {string} id - The ID of the config to set as default
-     * @returns {Promise<ScoringConfig>} - The updated config
-     */
-    setAsDefault(id: string): Promise<ScoringConfig>
-
-    /**
-     * Get or create scoring config for a job (falls back to default if none exists)
-     * @param {string} jobId - The job ID
-     * @returns {Promise<ScoringConfig>} - The scoring config for the job
-     */
-    getOrCreateScoringConfigForJob(jobId: string): Promise<ScoringConfig>
-
-    /**
-     * Calculate assessment score using a scoring config
-     * @param {string} configId - The scoring config ID
-     * @param {string} assessmentId - The assessment ID
-     * @returns {Promise<{score: number, maxScore: number, percentage: number, breakdown: any}>}
-     */
-    calculateAssessmentScore(
+    applyScoringConfig(
         configId: string,
-        assessmentId: string,
-    ): Promise<AssessmentScoreBreakdown>
+        jobId: string,
+    ): Promise<ScoringConfigWithDetails>
 
     /**
-     * Apply scoring config to multiple assessments
-     * @param {string} configId - The scoring config ID
-     * @param {string[]} assessmentIds - Array of assessment IDs
-     * @returns {Promise<Array<{assessmentId: string, score: number, percentage: number}>>}
+     * Preview impact of applying a scoring config
+     * @param {string} configId - The ID of the config to preview
+     * @param {string} jobId - The ID of the job to preview for
+     * @returns {Promise<ScoringPreview>} - The preview results
      */
-    bulkCalculateScores(
+    previewScoringConfig(
         configId: string,
-        assessmentIds: string[],
-    ): Promise<ScoringResult[]>
+        jobId: string,
+    ): Promise<ScoringPreview>
 }
 
 class ScoringConfigPoolImpl implements ScoringConfigPool {
@@ -126,21 +83,11 @@ class ScoringConfigPoolImpl implements ScoringConfigPool {
         private readonly logger: Logger,
     ) {}
 
-    async getScoringConfigById(id: string): Promise<ScoringConfig | null> {
+    async getScoringConfigById(
+        id: string,
+    ): Promise<ScoringConfigWithDetails | null> {
         try {
             return this.prisma.scoringConfig.findUnique({
-                where: { id },
-            })
-        } catch (err) {
-            handleDBError(err, this.logger)
-        }
-    }
-
-    async getScoringConfigWithJob(
-        id: string,
-    ): Promise<ScoringConfigWithJob | null> {
-        try {
-            const config = await this.prisma.scoringConfig.findUnique({
                 where: { id },
                 include: {
                     job: {
@@ -159,46 +106,20 @@ class ScoringConfigPoolImpl implements ScoringConfigPool {
                     },
                 },
             })
-
-            return config
         } catch (err) {
             handleDBError(err, this.logger)
         }
     }
 
-    async getScoringConfigByJobId(
-        jobId: string,
-    ): Promise<ScoringConfig | null> {
-        try {
-            return this.prisma.scoringConfig.findUnique({
-                where: { jobId },
-            })
-        } catch (err) {
-            handleDBError(err, this.logger)
-        }
-    }
-
-    async getDefaultScoringConfig(): Promise<ScoringConfig | null> {
-        try {
-            return this.prisma.scoringConfig.findFirst({
-                where: { isDefault: true },
-            })
-        } catch (err) {
-            handleDBError(err, this.logger)
-        }
-    }
-
-    async getScoringConfigsByCompanyId(
-        companyId: string,
-    ): Promise<ScoringConfigWithJob[]> {
+    async getScoringConfigs(
+        isDefault?: boolean,
+        jobId?: string,
+    ): Promise<ScoringConfigWithDetails[]> {
         try {
             return this.prisma.scoringConfig.findMany({
                 where: {
-                    job: {
-                        branch: {
-                            companyId,
-                        },
-                    },
+                    ...(isDefault !== undefined && { isDefault }),
+                    ...(jobId && { jobId }),
                 },
                 include: {
                     job: {
@@ -216,7 +137,6 @@ class ScoringConfigPoolImpl implements ScoringConfigPool {
                         },
                     },
                 },
-                orderBy: { createdAt: "desc" },
             })
         } catch (err) {
             handleDBError(err, this.logger)
@@ -225,9 +145,9 @@ class ScoringConfigPoolImpl implements ScoringConfigPool {
 
     async createScoringConfig(
         config: ScoringConfigCreate,
-    ): Promise<ScoringConfig> {
+    ): Promise<ScoringConfigWithDetails> {
         try {
-            // If setting as default, unset all other defaults first
+            // If setting as default, unset any existing default
             if (config.isDefault) {
                 await this.prisma.scoringConfig.updateMany({
                     where: { isDefault: true },
@@ -237,6 +157,60 @@ class ScoringConfigPoolImpl implements ScoringConfigPool {
 
             return this.prisma.scoringConfig.create({
                 data: config,
+                include: {
+                    job: {
+                        include: {
+                            branch: {
+                                include: {
+                                    company: {
+                                        select: {
+                                            id: true,
+                                            name: true,
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            })
+        } catch (err) {
+            handleDBError(err, this.logger)
+        }
+    }
+
+    async updateScoringConfig(
+        id: string,
+        config: ScoringConfigUpdate,
+    ): Promise<ScoringConfigWithDetails> {
+        try {
+            // If setting as default, unset any existing default
+            if (config.isDefault) {
+                await this.prisma.scoringConfig.updateMany({
+                    where: { isDefault: true },
+                    data: { isDefault: false },
+                })
+            }
+
+            return this.prisma.scoringConfig.update({
+                where: { id },
+                data: config,
+                include: {
+                    job: {
+                        include: {
+                            branch: {
+                                include: {
+                                    company: {
+                                        select: {
+                                            id: true,
+                                            name: true,
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
             })
         } catch (err) {
             handleDBError(err, this.logger)
@@ -253,12 +227,21 @@ class ScoringConfigPoolImpl implements ScoringConfigPool {
         }
     }
 
-    async getScoringConfigs(
-        limit: number = 50,
-        offset: number = 0,
-    ): Promise<ScoringConfigWithJob[]> {
+    async applyScoringConfig(
+        configId: string,
+        jobId: string,
+    ): Promise<ScoringConfigWithDetails> {
         try {
-            return this.prisma.scoringConfig.findMany({
+            // First, remove any existing config from the job
+            await this.prisma.scoringConfig.update({
+                where: { jobId },
+                data: { jobId: null },
+            })
+
+            // Then apply the new config
+            return this.prisma.scoringConfig.update({
+                where: { id: configId },
+                data: { jobId },
                 include: {
                     job: {
                         include: {
@@ -275,203 +258,130 @@ class ScoringConfigPoolImpl implements ScoringConfigPool {
                         },
                     },
                 },
-                orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
-                take: limit,
-                skip: offset,
             })
         } catch (err) {
             handleDBError(err, this.logger)
         }
     }
 
-    async updateScoringConfig(
-        id: string,
-        config: ScoringConfigUpdate,
-    ): Promise<ScoringConfig> {
-        try {
-            // If setting as default, unset all other defaults first
-            if (config.isDefault) {
-                await this.prisma.scoringConfig.updateMany({
-                    where: { isDefault: true, id: { not: id } },
-                    data: { isDefault: false },
-                })
-            }
-
-            return this.prisma.scoringConfig.update({
-                where: { id },
-                data: config,
-            })
-        } catch (err) {
-            handleDBError(err, this.logger)
-        }
-    }
-
-    async setAsDefault(id: string): Promise<ScoringConfig> {
-        try {
-            // Use transaction to ensure atomicity
-            const result = await this.prisma.$transaction(async (tx) => {
-                // Unset all other defaults
-                await tx.scoringConfig.updateMany({
-                    where: { isDefault: true },
-                    data: { isDefault: false },
-                })
-
-                // Set this config as default
-                return tx.scoringConfig.update({
-                    where: { id },
-                    data: { isDefault: true },
-                })
-            })
-
-            return result
-        } catch (err) {
-            handleDBError(err, this.logger)
-        }
-    }
-
-    async getOrCreateScoringConfigForJob(
-        jobId: string,
-    ): Promise<ScoringConfig> {
-        try {
-            // First try to get job-specific config
-            let config = await this.prisma.scoringConfig.findUnique({
-                where: { jobId },
-            })
-
-            if (!config) {
-                // If no job-specific config, get default
-                config = await this.prisma.scoringConfig.findFirst({
-                    where: { isDefault: true },
-                })
-
-                if (!config) {
-                    // If no default, create one
-                    config = await this.prisma.scoringConfig.create({
-                        data: {
-                            negativeMarkingFraction: 0.0,
-                            isDefault: true,
-                        },
-                    })
-                }
-            }
-
-            return config
-        } catch (err) {
-            handleDBError(err, this.logger)
-        }
-    }
-
-    async calculateAssessmentScore(
+    async previewScoringConfig(
         configId: string,
-        assessmentId: string,
-    ): Promise<AssessmentScoreBreakdown> {
+        jobId: string,
+    ): Promise<ScoringPreview> {
         try {
-            const [config, assessment] = await Promise.all([
-                this.prisma.scoringConfig.findUnique({
-                    where: { id: configId },
-                }),
-                this.prisma.applicantAssessment.findUnique({
-                    where: { id: assessmentId },
-                    include: {
-                        answers: {
-                            include: {
-                                question: {
-                                    select: {
-                                        weight: true,
-                                        negativeWeight: true,
-                                    },
-                                },
-                            },
-                        },
-                    },
-                }),
-            ])
-
-            if (!config || !assessment) {
-                throw new Error("Config or assessment not found")
-            }
-
-            let score = 0
-            let maxScore = 0
-            let correctAnswers = 0
-            let incorrectAnswers = 0
-            let negativeMarking = 0
-
-            // Calculate base score
-            for (const answer of assessment.answers) {
-                const weight = answer.question.weight
-                maxScore += weight
-
-                if (answer.isCorrect) {
-                    score += weight
-                    correctAnswers++
-                } else {
-                    incorrectAnswers++
-                    // Apply negative marking
-                    const negativeWeight =
-                        answer.question.negativeWeight ||
-                        weight * config.negativeMarkingFraction
-                    score -= negativeWeight
-                    negativeMarking += negativeWeight
-                }
-            }
-
-            // Apply recency boost if configured
-            let recencyBoost = 0
-            if (config.recencyWindowDays && config.recencyBoostPercent) {
-                const cutoffDate = new Date()
-                cutoffDate.setDate(
-                    cutoffDate.getDate() - config.recencyWindowDays,
+            // Get current config scores
+            const currentScores = await this.prisma.$queryRaw`
+                WITH RankedScores AS (
+                    SELECT 
+                        aa.id,
+                        aa."applicantId",
+                        COALESCE(SUM(CASE 
+                            WHEN aw."isCorrect" THEN aq.weight 
+                            ELSE -aq.weight * sc."negativeMarkingFraction"
+                        END), 0) as score,
+                        ROW_NUMBER() OVER (ORDER BY SUM(CASE 
+                            WHEN aw."isCorrect" THEN aq.weight 
+                            ELSE -aq.weight * sc."negativeMarkingFraction"
+                        END) DESC) as rank,
+                        COUNT(*) OVER () as total
+                    FROM "applicant_assessments" aa
+                    JOIN "assessment_templates" at ON aa."templateId" = at.id
+                    JOIN "applicant_answers" aw ON aa.id = aw."assessmentId"
+                    JOIN "assessment_questions" aq ON aw."questionId" = aq.id
+                    LEFT JOIN "scoring_configs" sc ON sc."jobId" = at."jobId"
+                    WHERE at."jobId" = ${jobId}
+                    GROUP BY aa.id, aa."applicantId"
                 )
+                SELECT 
+                    AVG(score) as score,
+                    AVG(rank) as rank,
+                    MAX(total) as total_candidates
+                FROM RankedScores
+            `
 
-                if (assessment.submittedAt >= cutoffDate) {
-                    recencyBoost = score * (config.recencyBoostPercent / 100)
-                    score += recencyBoost
-                }
+            // Get new config scores
+            const newConfig = await this.prisma.scoringConfig.findUnique({
+                where: { id: configId },
+            })
+
+            const newScores = await this.prisma.$queryRaw`
+                WITH RankedScores AS (
+                    SELECT 
+                        aa.id,
+                        aa."applicantId",
+                        COALESCE(SUM(CASE 
+                            WHEN aw."isCorrect" THEN aq.weight 
+                            ELSE -aq.weight * ${
+                                newConfig!.negativeMarkingFraction
+                            }
+                        END), 0) as score,
+                        ROW_NUMBER() OVER (ORDER BY SUM(CASE 
+                            WHEN aw."isCorrect" THEN aq.weight 
+                            ELSE -aq.weight * ${
+                                newConfig!.negativeMarkingFraction
+                            }
+                        END) DESC) as rank,
+                        COUNT(*) OVER () as total
+                    FROM "applicant_assessments" aa
+                    JOIN "assessment_templates" at ON aa."templateId" = at.id
+                    JOIN "applicant_answers" aw ON aa.id = aw."assessmentId"
+                    JOIN "assessment_questions" aq ON aw."questionId" = aq.id
+                    WHERE at."jobId" = ${jobId}
+                    GROUP BY aa.id, aa."applicantId"
+                )
+                SELECT 
+                    AVG(score) as score,
+                    AVG(rank) as rank,
+                    MAX(total) as total_candidates
+                FROM RankedScores
+            `
+
+            type ScoreResult = {
+                score: number
+                rank: number
+                total_candidates: number
             }
 
-            // Ensure score doesn't go below 0
-            score = Math.max(0, score)
+            const [current, newScore] = [
+                (currentScores as unknown as ScoreResult[])[0],
+                (newScores as unknown as ScoreResult[])[0],
+            ]
 
-            const percentage = maxScore > 0 ? (score / maxScore) * 100 : 0
+            const currentScore = current?.score || 0
+            const currentRank = current?.rank || 0
+            const currentTotal = current?.total_candidates || 0
+            const newScoreValue = newScore?.score || 0
+            const newRank = newScore?.rank || 0
+            const newTotal = newScore?.total_candidates || 0
 
             return {
-                score,
-                maxScore,
-                percentage,
-                breakdown: {
-                    totalQuestions: assessment.answers.length,
-                    correctAnswers,
-                    incorrectAnswers,
-                    negativeMarking,
-                    recencyBoost,
+                currentConfig: {
+                    score: currentScore,
+                    rank: currentRank,
+                    totalCandidates: currentTotal,
+                },
+                newConfig: {
+                    score: newScoreValue,
+                    rank: newRank,
+                    totalCandidates: newTotal,
+                },
+                changes: {
+                    scoreChange: newScoreValue - currentScore,
+                    rankChange: newRank - currentRank,
+                    explanation: [
+                        `Score will ${
+                            newScoreValue > currentScore
+                                ? "increase"
+                                : "decrease"
+                        } by ${Math.abs(newScoreValue - currentScore).toFixed(
+                            2,
+                        )} points`,
+                        `Rank will ${
+                            newRank < currentRank ? "improve" : "drop"
+                        } by ${Math.abs(newRank - currentRank)} positions`,
+                    ],
                 },
             }
-        } catch (err) {
-            handleDBError(err, this.logger)
-        }
-    }
-
-    async bulkCalculateScores(
-        configId: string,
-        assessmentIds: string[],
-    ): Promise<ScoringResult[]> {
-        try {
-            const results = []
-
-            for (const assessmentId of assessmentIds) {
-                const scoreResult = await this.calculateAssessmentScore(
-                    configId,
-                    assessmentId,
-                )
-                results.push({
-                    assessmentId,
-                    score: scoreResult.score,
-                    percentage: scoreResult.percentage,
-                })
-            }
-
-            return results
         } catch (err) {
             handleDBError(err, this.logger)
         }

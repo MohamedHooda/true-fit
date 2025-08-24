@@ -16,6 +16,12 @@ import getAssessmentTemplateService, {
 import getAssessmentQuestionService, {
     IAssessmentQuestionService,
 } from "./assessment-questions"
+import getApplicantAssessmentService, {
+    IApplicantAssessmentService,
+} from "./applicant-assessments"
+import getScoringConfigService, {
+    IScoringConfigService,
+} from "./scoring-configs"
 import getJobPool from "persistence/db/pool/jobs"
 import getApplicantPool from "persistence/db/pool/applicants"
 import getJobApplicationPool from "persistence/db/pool/job-applications"
@@ -53,6 +59,8 @@ export interface ServiceRegistry {
     getApplicantService(): IApplicantService
     getAssessmentTemplateService(): IAssessmentTemplateService
     getAssessmentQuestionService(): IAssessmentQuestionService
+    getApplicantAssessmentService(): IApplicantAssessmentService
+    getScoringConfigService(): IScoringConfigService
 }
 
 export class Services implements ServiceRegistry, PoolRegistry {
@@ -160,6 +168,36 @@ export class Services implements ServiceRegistry, PoolRegistry {
             )
         }
         return this.services.get("assessmentQuestionService")
+    }
+
+    getApplicantAssessmentService(): IApplicantAssessmentService {
+        if (!this.services.has("applicantAssessmentService")) {
+            const applicantAssessmentPool = getApplicantAssessmentPool(
+                this.db,
+                this.logger,
+            )
+            const applicantAssessmentService = getApplicantAssessmentService(
+                applicantAssessmentPool,
+                this.events,
+            )
+            this.services.set(
+                "applicantAssessmentService",
+                applicantAssessmentService,
+            )
+        }
+        return this.services.get("applicantAssessmentService")
+    }
+
+    getScoringConfigService(): IScoringConfigService {
+        if (!this.services.has("scoringConfigService")) {
+            const scoringConfigPool = getScoringConfigPool(this.db, this.logger)
+            const scoringConfigService = getScoringConfigService(
+                scoringConfigPool,
+                this.events,
+            )
+            this.services.set("scoringConfigService", scoringConfigService)
+        }
+        return this.services.get("scoringConfigService")
     }
 
     // Pool methods for direct database access

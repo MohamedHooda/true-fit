@@ -2,121 +2,71 @@ import { PrismaClient } from "@prisma/client"
 import { handleDBError } from "helpers/serviceError"
 import { Logger } from "types/logging"
 import {
-    ApplicantAssessment,
     ApplicantAssessmentWithDetails,
-    ApplicantAssessmentCreate,
     AssessmentSubmission,
-    ApplicantAssessmentFilters,
     AssessmentScore,
+    AssessmentScoreWithDetails,
+    AssessmentExplanation,
+    AssessmentFilters,
     AssessmentStats,
-} from "types/assessment"
+} from "types/applicant-assessment"
 
 export interface ApplicantAssessmentPool {
     /**
-     * Get an applicant assessment by ID
-     * @param {string} id - The ID of the assessment to get
-     * @returns {Promise<ApplicantAssessment | null>} - The applicant assessment
-     */
-    getApplicantAssessmentById(id: string): Promise<ApplicantAssessment | null>
-
-    /**
-     * Get an applicant assessment with full details
+     * Get an assessment by ID
      * @param {string} id - The ID of the assessment to get
      * @returns {Promise<ApplicantAssessmentWithDetails | null>} - The assessment with details
      */
-    getApplicantAssessmentWithDetails(
+    getAssessmentById(
         id: string,
     ): Promise<ApplicantAssessmentWithDetails | null>
 
     /**
-     * Get assessments by applicant ID
-     * @param {string} applicantId - The ID of the applicant
-     * @returns {Promise<ApplicantAssessmentWithDetails[]>} - The assessments for the applicant
+     * Get assessments with optional filters
+     * @param {AssessmentFilters} filters - Optional filters to apply
+     * @param {number} limit - Maximum number of assessments to return
+     * @param {number} offset - Number of assessments to skip
+     * @returns {Promise<ApplicantAssessmentWithDetails[]>} - The assessments with details
      */
-    getApplicantAssessmentsByApplicantId(
-        applicantId: string,
+    getAssessments(
+        filters?: AssessmentFilters,
+        limit?: number,
+        offset?: number,
     ): Promise<ApplicantAssessmentWithDetails[]>
 
     /**
-     * Get assessments by template ID
-     * @param {string} templateId - The ID of the template
-     * @returns {Promise<ApplicantAssessmentWithDetails[]>} - The assessments for the template
-     */
-    getApplicantAssessmentsByTemplateId(
-        templateId: string,
-    ): Promise<ApplicantAssessmentWithDetails[]>
-
-    /**
-     * Get assessments by company ID
-     * @param {string} companyId - The ID of the company
-     * @returns {Promise<ApplicantAssessmentWithDetails[]>} - The assessments for the company
-     */
-    getApplicantAssessmentsByCompanyId(
-        companyId: string,
-    ): Promise<ApplicantAssessmentWithDetails[]>
-
-    /**
-     * Create an applicant assessment
-     * @param {ApplicantAssessmentCreate} assessment - The assessment to create
-     * @returns {Promise<ApplicantAssessment>} - The created assessment
-     */
-    createApplicantAssessment(
-        assessment: ApplicantAssessmentCreate,
-    ): Promise<ApplicantAssessment>
-
-    /**
-     * Submit a complete assessment with answers
+     * Submit an assessment
      * @param {AssessmentSubmission} submission - The assessment submission
-     * @returns {Promise<ApplicantAssessmentWithDetails>} - The created assessment with details
+     * @returns {Promise<ApplicantAssessmentWithDetails>} - The submitted assessment
      */
     submitAssessment(
         submission: AssessmentSubmission,
     ): Promise<ApplicantAssessmentWithDetails>
 
     /**
-     * Delete an applicant assessment
-     * @param {string} id - The ID of the assessment to delete
-     * @returns {Promise<void>}
+     * Get assessment score
+     * @param {string} id - The ID of the assessment
+     * @returns {Promise<AssessmentScoreWithDetails>} - The assessment score with details
      */
-    deleteApplicantAssessment(id: string): Promise<void>
+    getAssessmentScore(id: string): Promise<AssessmentScoreWithDetails>
 
     /**
-     * Get all applicant assessments with filtering
-     * @param {ApplicantAssessmentFilters} filters - Filters to apply
-     * @param {number} limit - Maximum number of assessments to return
-     * @param {number} offset - Number of assessments to skip
-     * @returns {Promise<ApplicantAssessmentWithDetails[]>} - The assessments with details
+     * Get assessment explanation
+     * @param {string} id - The ID of the assessment
+     * @returns {Promise<AssessmentExplanation>} - The assessment explanation
      */
-    getApplicantAssessments(
-        filters?: ApplicantAssessmentFilters,
-        limit?: number,
-        offset?: number,
-    ): Promise<ApplicantAssessmentWithDetails[]>
-
-    /**
-     * Check if an applicant has completed a template
-     * @param {string} applicantId - The applicant ID
-     * @param {string} templateId - The template ID
-     * @returns {Promise<boolean>} - Whether the applicant has completed the template
-     */
-    hasApplicantCompletedTemplate(
-        applicantId: string,
-        templateId: string,
-    ): Promise<boolean>
-
-    /**
-     * Calculate assessment score
-     * @param {string} id - The assessment ID
-     * @returns {Promise<AssessmentScore>} - The calculated score
-     */
-    calculateAssessmentScore(id: string): Promise<AssessmentScore>
+    getAssessmentExplanation(id: string): Promise<AssessmentExplanation>
 
     /**
      * Get assessment statistics
-     * @param {string} companyId - Optional company ID to filter by
-     * @returns {Promise<AssessmentStats>}
+     * @param {string} templateId - Optional template ID to filter by
+     * @param {string} jobId - Optional job ID to filter by
+     * @returns {Promise<AssessmentStats>} - The assessment statistics
      */
-    getAssessmentStats(companyId?: string): Promise<AssessmentStats>
+    getAssessmentStats(
+        templateId?: string,
+        jobId?: string,
+    ): Promise<AssessmentStats>
 }
 
 class ApplicantAssessmentPoolImpl implements ApplicantAssessmentPool {
@@ -125,85 +75,12 @@ class ApplicantAssessmentPoolImpl implements ApplicantAssessmentPool {
         private readonly logger: Logger,
     ) {}
 
-    async getApplicantAssessmentById(
-        id: string,
-    ): Promise<ApplicantAssessment | null> {
-        try {
-            return this.prisma.applicantAssessment.findUnique({
-                where: { id },
-            })
-        } catch (err) {
-            handleDBError(err, this.logger)
-        }
-    }
-
-    async getApplicantAssessmentWithDetails(
+    async getAssessmentById(
         id: string,
     ): Promise<ApplicantAssessmentWithDetails | null> {
         try {
-            const assessment = await this.prisma.applicantAssessment.findUnique(
-                {
-                    where: { id },
-                    include: {
-                        applicant: {
-                            select: {
-                                id: true,
-                                email: true,
-                                firstName: true,
-                                lastName: true,
-                                phone: true,
-                                city: true,
-                                country: true,
-                            },
-                        },
-                        template: {
-                            include: {
-                                job: {
-                                    include: {
-                                        branch: {
-                                            include: {
-                                                company: {
-                                                    select: {
-                                                        id: true,
-                                                        name: true,
-                                                    },
-                                                },
-                                            },
-                                        },
-                                    },
-                                },
-                            },
-                        },
-                        answers: {
-                            include: {
-                                question: {
-                                    select: {
-                                        id: true,
-                                        text: true,
-                                        type: true,
-                                        weight: true,
-                                        correctAnswer: true,
-                                    },
-                                },
-                            },
-                            orderBy: { question: { order: "asc" } },
-                        },
-                    },
-                },
-            )
-
-            return assessment
-        } catch (err) {
-            handleDBError(err, this.logger)
-        }
-    }
-
-    async getApplicantAssessmentsByApplicantId(
-        applicantId: string,
-    ): Promise<ApplicantAssessmentWithDetails[]> {
-        try {
-            return this.prisma.applicantAssessment.findMany({
-                where: { applicantId },
+            return this.prisma.applicantAssessment.findUnique({
+                where: { id },
                 include: {
                     applicant: {
                         select: {
@@ -246,87 +123,45 @@ class ApplicantAssessmentPoolImpl implements ApplicantAssessmentPool {
                                 },
                             },
                         },
-                        orderBy: { question: { order: "asc" } },
                     },
                 },
-                orderBy: { submittedAt: "desc" },
             })
         } catch (err) {
             handleDBError(err, this.logger)
         }
     }
 
-    async getApplicantAssessmentsByTemplateId(
-        templateId: string,
-    ): Promise<ApplicantAssessmentWithDetails[]> {
-        try {
-            return this.prisma.applicantAssessment.findMany({
-                where: { templateId },
-                include: {
-                    applicant: {
-                        select: {
-                            id: true,
-                            email: true,
-                            firstName: true,
-                            lastName: true,
-                            phone: true,
-                            city: true,
-                            country: true,
-                        },
-                    },
-                    template: {
-                        include: {
-                            job: {
-                                include: {
-                                    branch: {
-                                        include: {
-                                            company: {
-                                                select: {
-                                                    id: true,
-                                                    name: true,
-                                                },
-                                            },
-                                        },
-                                    },
-                                },
-                            },
-                        },
-                    },
-                    answers: {
-                        include: {
-                            question: {
-                                select: {
-                                    id: true,
-                                    text: true,
-                                    type: true,
-                                    weight: true,
-                                    correctAnswer: true,
-                                },
-                            },
-                        },
-                        orderBy: { question: { order: "asc" } },
-                    },
-                },
-                orderBy: { submittedAt: "desc" },
-            })
-        } catch (err) {
-            handleDBError(err, this.logger)
-        }
-    }
-
-    async getApplicantAssessmentsByCompanyId(
-        companyId: string,
+    async getAssessments(
+        filters?: AssessmentFilters,
+        limit?: number,
+        offset?: number,
     ): Promise<ApplicantAssessmentWithDetails[]> {
         try {
             return this.prisma.applicantAssessment.findMany({
                 where: {
-                    template: {
-                        job: {
-                            branch: {
-                                companyId,
-                            },
+                    ...(filters?.applicantId && {
+                        applicantId: filters.applicantId,
+                    }),
+                    ...(filters?.templateId && {
+                        templateId: filters.templateId,
+                    }),
+                    ...(filters?.jobId && {
+                        template: { jobId: filters.jobId },
+                    }),
+                    ...(filters?.companyId && {
+                        template: {
+                            job: { branch: { companyId: filters.companyId } },
                         },
-                    },
+                    }),
+                    ...(filters?.submittedAfter && {
+                        submittedAt: { gte: filters.submittedAfter },
+                    }),
+                    ...(filters?.submittedBefore && {
+                        submittedAt: { lte: filters.submittedBefore },
+                    }),
+                    ...(filters?.isCorrect !== undefined && {
+                        answers: { some: { isCorrect: filters.isCorrect } },
+                    }),
                 },
                 include: {
                     applicant: {
@@ -370,22 +205,11 @@ class ApplicantAssessmentPoolImpl implements ApplicantAssessmentPool {
                                 },
                             },
                         },
-                        orderBy: { question: { order: "asc" } },
                     },
                 },
+                take: limit,
+                skip: offset,
                 orderBy: { submittedAt: "desc" },
-            })
-        } catch (err) {
-            handleDBError(err, this.logger)
-        }
-    }
-
-    async createApplicantAssessment(
-        assessment: ApplicantAssessmentCreate,
-    ): Promise<ApplicantAssessment> {
-        try {
-            return this.prisma.applicantAssessment.create({
-                data: assessment,
             })
         } catch (err) {
             handleDBError(err, this.logger)
@@ -398,7 +222,7 @@ class ApplicantAssessmentPoolImpl implements ApplicantAssessmentPool {
         try {
             // Use transaction to create assessment and answers
             const result = await this.prisma.$transaction(async (tx) => {
-                // Create the assessment
+                // Create assessment
                 const assessment = await tx.applicantAssessment.create({
                     data: {
                         applicantId: submission.applicantId,
@@ -407,33 +231,36 @@ class ApplicantAssessmentPoolImpl implements ApplicantAssessmentPool {
                     },
                 })
 
-                // Get template questions to validate answers
+                // Get questions for validation and scoring
                 const questions = await tx.assessmentQuestion.findMany({
                     where: { templateId: submission.templateId },
                 })
 
-                const questionMap = new Map(questions.map((q) => [q.id, q]))
+                // Create answers with correctness check
+                const answers = await Promise.all(
+                    submission.answers.map(async (answer) => {
+                        const question = questions.find(
+                            (q) => q.id === answer.questionId,
+                        )
+                        if (!question) {
+                            throw new Error(
+                                `Question ${answer.questionId} not found`,
+                            )
+                        }
 
-                // Create answers and check correctness
-                for (const answerData of submission.answers) {
-                    const question = questionMap.get(answerData.questionId)
-                    if (!question) continue
+                        return tx.applicantAnswer.create({
+                            data: {
+                                assessmentId: assessment.id,
+                                questionId: answer.questionId,
+                                answer: answer.answer,
+                                isCorrect:
+                                    answer.answer === question.correctAnswer,
+                            },
+                        })
+                    }),
+                )
 
-                    const isCorrect = question.correctAnswer
-                        ? answerData.answer === question.correctAnswer
-                        : false
-
-                    await tx.applicantAnswer.create({
-                        data: {
-                            assessmentId: assessment.id,
-                            questionId: answerData.questionId,
-                            answer: answerData.answer,
-                            isCorrect,
-                        },
-                    })
-                }
-
-                // Return the assessment with details
+                // Return assessment with details
                 return tx.applicantAssessment.findUnique({
                     where: { id: assessment.id },
                     include: {
@@ -478,94 +305,40 @@ class ApplicantAssessmentPoolImpl implements ApplicantAssessmentPool {
                                     },
                                 },
                             },
-                            orderBy: { question: { order: "asc" } },
                         },
                     },
                 })
             })
 
-            return result!
+            if (!result) {
+                throw new Error("Failed to create assessment")
+            }
+
+            return result
         } catch (err) {
             handleDBError(err, this.logger)
         }
     }
 
-    async deleteApplicantAssessment(id: string): Promise<void> {
+    async getAssessmentScore(id: string): Promise<AssessmentScoreWithDetails> {
         try {
-            await this.prisma.applicantAssessment.delete({
-                where: { id },
-            })
-        } catch (err) {
-            handleDBError(err, this.logger)
-        }
-    }
-
-    async getApplicantAssessments(
-        filters: ApplicantAssessmentFilters = {},
-        limit: number = 50,
-        offset: number = 0,
-    ): Promise<ApplicantAssessmentWithDetails[]> {
-        try {
-            const where: any = {}
-
-            if (filters.applicantId) {
-                where.applicantId = filters.applicantId
-            }
-
-            if (filters.templateId) {
-                where.templateId = filters.templateId
-            }
-
-            if (filters.jobId) {
-                where.template = {
-                    jobId: filters.jobId,
-                }
-            }
-
-            if (filters.companyId) {
-                where.template = {
-                    job: {
-                        branch: {
-                            companyId: filters.companyId,
-                        },
-                    },
-                }
-            }
-
-            if (filters.dateFrom || filters.dateTo) {
-                where.submittedAt = {}
-                if (filters.dateFrom) {
-                    where.submittedAt.gte = filters.dateFrom
-                }
-                if (filters.dateTo) {
-                    where.submittedAt.lte = filters.dateTo
-                }
-            }
-
-            return this.prisma.applicantAssessment.findMany({
-                where,
-                include: {
-                    applicant: {
-                        select: {
-                            id: true,
-                            email: true,
-                            firstName: true,
-                            lastName: true,
-                            phone: true,
-                            city: true,
-                            country: true,
-                        },
-                    },
-                    template: {
-                        include: {
-                            job: {
-                                include: {
-                                    branch: {
-                                        include: {
-                                            company: {
-                                                select: {
-                                                    id: true,
-                                                    name: true,
+            const assessment = await this.prisma.applicantAssessment.findUnique(
+                {
+                    where: { id },
+                    include: {
+                        applicant: true,
+                        template: {
+                            include: {
+                                job: {
+                                    include: {
+                                        scoringConfig: true,
+                                        branch: {
+                                            include: {
+                                                company: {
+                                                    select: {
+                                                        id: true,
+                                                        name: true,
+                                                    },
                                                 },
                                             },
                                         },
@@ -573,62 +346,9 @@ class ApplicantAssessmentPoolImpl implements ApplicantAssessmentPool {
                                 },
                             },
                         },
-                    },
-                    answers: {
-                        include: {
-                            question: {
-                                select: {
-                                    id: true,
-                                    text: true,
-                                    type: true,
-                                    weight: true,
-                                    correctAnswer: true,
-                                },
-                            },
-                        },
-                        orderBy: { question: { order: "asc" } },
-                    },
-                },
-                orderBy: { submittedAt: "desc" },
-                take: limit,
-                skip: offset,
-            })
-        } catch (err) {
-            handleDBError(err, this.logger)
-        }
-    }
-
-    async hasApplicantCompletedTemplate(
-        applicantId: string,
-        templateId: string,
-    ): Promise<boolean> {
-        try {
-            const existing = await this.prisma.applicantAssessment.findFirst({
-                where: {
-                    applicantId,
-                    templateId,
-                },
-            })
-
-            return !!existing
-        } catch (err) {
-            handleDBError(err, this.logger)
-        }
-    }
-
-    async calculateAssessmentScore(id: string): Promise<AssessmentScore> {
-        try {
-            const assessment = await this.prisma.applicantAssessment.findUnique(
-                {
-                    where: { id },
-                    include: {
                         answers: {
                             include: {
-                                question: {
-                                    select: {
-                                        weight: true,
-                                    },
-                                },
+                                question: true,
                             },
                         },
                     },
@@ -639,79 +359,304 @@ class ApplicantAssessmentPoolImpl implements ApplicantAssessmentPool {
                 throw new Error("Assessment not found")
             }
 
-            let score = 0
-            let maxScore = 0
+            // Get scoring config (job-specific or default)
+            const scoringConfig =
+                assessment.template.job?.scoringConfig ||
+                (await this.prisma.scoringConfig.findFirst({
+                    where: { isDefault: true },
+                }))
 
-            for (const answer of assessment.answers) {
+            if (!scoringConfig) {
+                throw new Error("No scoring configuration found")
+            }
+
+            // Calculate base score
+            let totalPoints = 0
+            let maxPossiblePoints = 0
+            let correctAnswers = 0
+            let incorrectAnswers = 0
+
+            assessment.answers.forEach((answer) => {
                 const weight = answer.question.weight
-                maxScore += weight
+                maxPossiblePoints += weight
 
                 if (answer.isCorrect) {
-                    score += weight
+                    totalPoints += weight
+                    correctAnswers++
+                } else {
+                    totalPoints -=
+                        weight * scoringConfig.negativeMarkingFraction
+                    incorrectAnswers++
+                }
+            })
+
+            // Apply recency boost if configured
+            let recencyBonus = 0
+            if (
+                scoringConfig.recencyBoostPercent &&
+                scoringConfig.recencyWindowDays
+            ) {
+                const submissionDate = assessment.submittedAt
+                const now = new Date()
+                const daysDiff = Math.floor(
+                    (now.getTime() - submissionDate.getTime()) /
+                        (1000 * 60 * 60 * 24),
+                )
+
+                if (daysDiff <= scoringConfig.recencyWindowDays) {
+                    recencyBonus =
+                        (totalPoints * scoringConfig.recencyBoostPercent) / 100
+                    totalPoints += recencyBonus
                 }
             }
 
-            const percentage = maxScore > 0 ? (score / maxScore) * 100 : 0
-
-            return { score, maxScore, percentage }
+            return {
+                assessmentId: assessment.id,
+                applicantId: assessment.applicantId,
+                templateId: assessment.templateId,
+                submittedAt: assessment.submittedAt,
+                scoredAt: new Date(),
+                scoringConfigId: scoringConfig.id,
+                score: totalPoints,
+                maxPossibleScore: maxPossiblePoints,
+                percentage: (totalPoints / maxPossiblePoints) * 100,
+                breakdown: {
+                    correctAnswers: {
+                        count: correctAnswers,
+                        points:
+                            correctAnswers *
+                            assessment.answers[0].question.weight,
+                    },
+                    incorrectAnswers: {
+                        count: incorrectAnswers,
+                        points:
+                            -incorrectAnswers *
+                            assessment.answers[0].question.weight *
+                            scoringConfig.negativeMarkingFraction,
+                    },
+                    recencyBonus: recencyBonus
+                        ? {
+                              percentage: scoringConfig.recencyBoostPercent!,
+                              points: recencyBonus,
+                          }
+                        : undefined,
+                },
+                explanation: [
+                    `Correct answers: ${correctAnswers} (+${
+                        correctAnswers * assessment.answers[0].question.weight
+                    } points)`,
+                    `Incorrect answers: ${incorrectAnswers} (${
+                        -incorrectAnswers *
+                        assessment.answers[0].question.weight *
+                        scoringConfig.negativeMarkingFraction
+                    } points)`,
+                    ...(recencyBonus
+                        ? [
+                              `Recency bonus: +${recencyBonus.toFixed(
+                                  2,
+                              )} points (${
+                                  scoringConfig.recencyBoostPercent
+                              }% boost)`,
+                          ]
+                        : []),
+                ],
+                assessment: assessment as ApplicantAssessmentWithDetails,
+                scoringConfig,
+            }
         } catch (err) {
             handleDBError(err, this.logger)
         }
     }
 
-    async getAssessmentStats(companyId?: string): Promise<AssessmentStats> {
+    async getAssessmentExplanation(id: string): Promise<AssessmentExplanation> {
         try {
-            const where: any = {}
+            const score = await this.getAssessmentScore(id)
+            const assessment = score.assessment
 
-            if (companyId) {
-                where.template = {
-                    job: {
-                        branch: {
-                            companyId,
-                        },
-                    },
-                }
+            return {
+                assessmentId: assessment.id,
+                applicantId: assessment.applicantId,
+                templateId: assessment.templateId,
+                submittedAt: assessment.submittedAt,
+                scoredAt: score.scoredAt,
+                scoringConfigId: score.scoringConfigId,
+                config: {
+                    negativeMarking:
+                        score.scoringConfig.negativeMarkingFraction > 0,
+                    negativeMarkingFraction:
+                        score.scoringConfig.negativeMarkingFraction,
+                    recencyBoost: !!score.scoringConfig.recencyBoostPercent,
+                    recencyWindowDays:
+                        score.scoringConfig.recencyWindowDays || undefined,
+                    recencyBoostPercent:
+                        score.scoringConfig.recencyBoostPercent || undefined,
+                },
+                assessment: {
+                    totalQuestions: assessment.answers.length,
+                    answeredQuestions: assessment.answers.filter(
+                        (a) => a.answer !== null,
+                    ).length,
+                    correctAnswers: assessment.answers.filter(
+                        (a) => a.isCorrect,
+                    ).length,
+                    incorrectAnswers: assessment.answers.filter(
+                        (a) => !a.isCorrect,
+                    ).length,
+                    timeTaken: 0, // Not tracking time yet
+                    submittedAt: assessment.submittedAt,
+                },
+                scoring: {
+                    baseScore:
+                        score.breakdown.correctAnswers.points +
+                        score.breakdown.incorrectAnswers.points,
+                    negativeMarking: Math.abs(
+                        score.breakdown.incorrectAnswers.points,
+                    ),
+                    recencyBonus: score.breakdown.recencyBonus?.points || 0,
+                    finalScore: score.score,
+                    maxPossibleScore: score.maxPossibleScore,
+                },
+                breakdown: assessment.answers.map((answer) => ({
+                    questionId: answer.question.id,
+                    weight: answer.question.weight,
+                    answer: answer.answer || "",
+                    isCorrect: answer.isCorrect,
+                    points: answer.isCorrect
+                        ? answer.question.weight
+                        : -answer.question.weight *
+                          score.scoringConfig.negativeMarkingFraction,
+                    explanation: answer.isCorrect
+                        ? `Correct answer (+${answer.question.weight} points)`
+                        : `Incorrect answer (-${
+                              answer.question.weight *
+                              score.scoringConfig.negativeMarkingFraction
+                          } points)`,
+                })),
+            }
+        } catch (err) {
+            handleDBError(err, this.logger)
+        }
+    }
+
+    async getAssessmentStats(
+        templateId?: string,
+        jobId?: string,
+    ): Promise<AssessmentStats> {
+        try {
+            // Base query conditions
+            const where = {
+                ...(templateId && { templateId }),
+                ...(jobId && { template: { jobId } }),
             }
 
+            // Get all assessments matching criteria
             const assessments = await this.prisma.applicantAssessment.findMany({
                 where,
                 include: {
-                    answers: {
+                    answers: true,
+                    template: {
                         include: {
-                            question: {
-                                select: {
-                                    weight: true,
-                                },
-                            },
+                            questions: true,
                         },
                     },
                 },
             })
 
-            const total = assessments.length
-            let totalPercentage = 0
-
-            for (const assessment of assessments) {
-                let score = 0
-                let maxScore = 0
-
-                for (const answer of assessment.answers) {
-                    const weight = answer.question.weight
-                    maxScore += weight
-
-                    if (answer.isCorrect) {
-                        score += weight
-                    }
+            if (assessments.length === 0) {
+                return {
+                    totalAssessments: 0,
+                    averageScore: 0,
+                    medianScore: 0,
+                    completionRate: 0,
+                    averageTimeSpent: 0,
+                    scoreDistribution: [],
+                    correctAnswerRate: 0,
+                    questionStats: [],
                 }
-
-                const percentage = maxScore > 0 ? (score / maxScore) * 100 : 0
-                totalPercentage += percentage
             }
 
-            const averageScore = total > 0 ? totalPercentage / total : 0
-            const completionRate = 100 // All retrieved assessments are completed
+            // Calculate scores
+            const scores = assessments.map((assessment) => {
+                const totalQuestions = assessment.template.questions.length
+                const answeredQuestions = assessment.answers.length
+                const correctAnswers = assessment.answers.filter(
+                    (a) => a.isCorrect,
+                ).length
 
-            return { total, averageScore, completionRate }
+                return {
+                    score: (correctAnswers / totalQuestions) * 100,
+                    completed: answeredQuestions === totalQuestions,
+                    correctAnswers,
+                    totalAnswers: answeredQuestions,
+                }
+            })
+
+            // Sort scores for median calculation
+            const sortedScores = [...scores].sort((a, b) => a.score - b.score)
+            const midPoint = Math.floor(sortedScores.length / 2)
+
+            // Calculate score distribution
+            const distribution = new Map<string, number>()
+            scores.forEach((score) => {
+                const range = `${Math.floor(score.score / 10) * 10}-${
+                    Math.floor(score.score / 10) * 10 + 10
+                }`
+                distribution.set(range, (distribution.get(range) || 0) + 1)
+            })
+
+            // Calculate question statistics
+            const questionStats = new Map<
+                string,
+                { correct: number; total: number; text: string }
+            >()
+            assessments.forEach((assessment) => {
+                assessment.answers.forEach((answer) => {
+                    const stats = questionStats.get(answer.questionId) || {
+                        correct: 0,
+                        total: 0,
+                        text: "",
+                    }
+                    if (answer.isCorrect) stats.correct++
+                    stats.total++
+                    questionStats.set(answer.questionId, stats)
+                })
+            })
+
+            return {
+                totalAssessments: assessments.length,
+                averageScore:
+                    scores.reduce((sum, s) => sum + s.score, 0) / scores.length,
+                medianScore:
+                    scores.length % 2 === 0
+                        ? (sortedScores[midPoint - 1].score +
+                              sortedScores[midPoint].score) /
+                          2
+                        : sortedScores[midPoint].score,
+                completionRate:
+                    (scores.filter((s) => s.completed).length / scores.length) *
+                    100,
+                averageTimeSpent: 0, // Not tracking time yet
+                scoreDistribution: Array.from(distribution.entries()).map(
+                    ([range, count]) => ({
+                        range,
+                        count,
+                        percentage: (count / scores.length) * 100,
+                    }),
+                ),
+                correctAnswerRate:
+                    (scores.reduce((sum, s) => sum + s.correctAnswers, 0) /
+                        scores.reduce((sum, s) => sum + s.totalAnswers, 0)) *
+                    100,
+                questionStats: Array.from(questionStats.entries()).map(
+                    ([id, stats]) => ({
+                        questionId: id,
+                        text: stats.text,
+                        correctAnswers: stats.correct,
+                        totalAnswers: stats.total,
+                        accuracyRate: (stats.correct / stats.total) * 100,
+                    }),
+                ),
+            }
         } catch (err) {
             handleDBError(err, this.logger)
         }
