@@ -16,7 +16,7 @@
         "eslint": "eslint .",
         "prettier": "prettier --write .",
         "healthcheck": "node node_modules/fastify-healthcheck/src/healthcheck http://localhost:3000/health",
-        "start": "node dist/server.js"
+        "start": "node dist/src/server.js"
     },
     "dependencies": {
         "@fastify/autoload": "^5.7.1",
