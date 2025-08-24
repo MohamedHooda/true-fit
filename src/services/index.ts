@@ -13,6 +13,9 @@ import getApplicantService, { IApplicantService } from "./applicants"
 import getAssessmentTemplateService, {
     IAssessmentTemplateService,
 } from "./assessment-templates"
+import getAssessmentQuestionService, {
+    IAssessmentQuestionService,
+} from "./assessment-questions"
 import getJobPool from "persistence/db/pool/jobs"
 import getApplicantPool from "persistence/db/pool/applicants"
 import getJobApplicationPool from "persistence/db/pool/job-applications"
@@ -49,6 +52,7 @@ export interface ServiceRegistry {
     getJobService(): IJobService
     getApplicantService(): IApplicantService
     getAssessmentTemplateService(): IAssessmentTemplateService
+    getAssessmentQuestionService(): IAssessmentQuestionService
 }
 
 export class Services implements ServiceRegistry, PoolRegistry {
@@ -138,6 +142,24 @@ export class Services implements ServiceRegistry, PoolRegistry {
             )
         }
         return this.services.get("assessmentTemplateService")
+    }
+
+    getAssessmentQuestionService(): IAssessmentQuestionService {
+        if (!this.services.has("assessmentQuestionService")) {
+            const assessmentQuestionPool = getAssessmentQuestionPool(
+                this.db,
+                this.logger,
+            )
+            const assessmentQuestionService = getAssessmentQuestionService(
+                assessmentQuestionPool,
+                this.events,
+            )
+            this.services.set(
+                "assessmentQuestionService",
+                assessmentQuestionService,
+            )
+        }
+        return this.services.get("assessmentQuestionService")
     }
 
     // Pool methods for direct database access
