@@ -13,6 +13,7 @@ import {
 } from "types/user"
 import { UserPool } from "persistence/db/pool/users"
 import { ITrueFitEventRelaying } from "services/events"
+import { ServiceError, ServiceErrorType } from "types/serviceError"
 
 export interface IUserService {
     /**
@@ -184,7 +185,10 @@ class UserService implements IUserService {
         // Authenticate user
         const user = await this.pool.authenticateUser(email, password)
         if (!user) {
-            throw new Error("Invalid credentials")
+            throw new ServiceError(
+                ServiceErrorType.Forbidden,
+                "Invalid credentials",
+            )
         }
 
         // Create session

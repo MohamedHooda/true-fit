@@ -16,10 +16,10 @@ import * as Sentry from "@sentry/node"
 import Ajv from "ajv"
 import addFormats from "ajv-formats"
 import path from "path"
-import connectDB from "fastify-extensions/connectDB"
-import services from "fastify-extensions/services"
-import events from "fastify-extensions/events"
-import { DB } from "persistence/db"
+import connectDB from "./fastify-extensions/connectDB"
+import services from "./fastify-extensions/services"
+import events from "./fastify-extensions/events"
+import { DB } from "./persistence/db"
 
 import NodeCache from "node-cache"
 
@@ -28,8 +28,8 @@ import {
     getInfoConfig,
     getLogoConfig,
     getThemeConfig,
-} from "helpers/swaggeruiconfig"
-import validate from "auth/swaggerAuth"
+} from "./helpers/swaggeruiconfig"
+import validate from "./auth/swaggerAuth"
 
 /**
  * Build the FastifyInstance
