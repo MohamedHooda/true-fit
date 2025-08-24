@@ -3,11 +3,16 @@
     "version": "1.0.0",
     "main": "src/server.ts",
     "license": "MIT",
+    "engines": {
+        "node": ">=18.17.0"
+    },
     "scripts": {
         "cp:public-assets": "cp -R src/public-assets dist",
         "build": "tsc -p tsconfig.json && tsc-alias -p tsconfig.json",
         "copy": "yarn cp:public-assets",
         "dev": "rm -rf ./dist/ && tsc-watch --onSuccess \"sh -c 'tsc-alias -p tsconfig.json && yarn copy && node dist/server.js'\"",
+        "test": "node --expose-gc ./node_modules/.bin/mocha -r ts-node/register --r tsconfig-paths/register --require 'test/hooks.ts' --timeout 5000 --bail --parallel 'test/unit-tests/**/*.ts'",
+        "coverage": "nyc --reporter=text mocha -r ts-node/register --r tsconfig-paths/register --require 'test/hooks.ts' 'test/unit-tests/**/*.ts'",
         "eslint": "eslint .",
         "prettier": "prettier --write .",
         "healthcheck": "node node_modules/fastify-healthcheck/src/healthcheck http://localhost:3000/health",
@@ -42,16 +47,24 @@
     },
     "devDependencies": {
         "@types/bcryptjs": "^3.0.0",
+        "@types/chai": "^4.3.4",
         "@types/jsonwebtoken": "^9.0.10",
+        "@types/mocha": "^10.0.1",
         "@types/node": "18.15.3",
         "@typescript-eslint/eslint-plugin": "5.57.1",
         "@typescript-eslint/parser": "5.57.1",
+        "chai": "4.3.7",
         "eslint": "8.37.0",
         "eslint-config-prettier": "8.8.0",
+        "mocha": "10.2.0",
+        "nyc": "^15.1.0",
         "prettier": "2.8.7",
         "prisma": "4.16.2",
+        "prismock": "^1.23.2",
+        "ts-node": "10.9.1",
         "tsc-alias": "^1.0.2",
         "tsc-watch": "6.0.0",
+        "tsconfig-paths": "^3.10.1",
         "typescript": "5.0.3"
     },
     "lint-staged": {

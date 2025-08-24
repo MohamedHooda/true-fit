@@ -49,9 +49,12 @@ model Branch {
   companyId String  @db.Uuid
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
+  // Relationships
+  jobs Job[]
+
   // Business constraints
   @@unique([companyId, name]) // Prevent duplicate branch names within same company
-  @@index([city, country])    // Geographic queries
+  @@index([city, country]) // Geographic queries
   @@map("branches")
 }
 
@@ -67,7 +70,7 @@ model User {
   updatedAt    DateTime  @updatedAt @db.Timestamptz
 
   // Foreign Keys - Optional because system admins might not belong to a specific company
-  companyId String? @db.Uuid
+  companyId String?  @db.Uuid
   company   Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
 
   // Relationships
@@ -105,10 +108,204 @@ model UserSession {
 // =====================================================
 
 enum UserRole {
-  ADMIN           // System-wide administrator
-  RECRUITER       // Can manage jobs and view applications
-  READONLY        // View-only access
+  ADMIN // System-wide administrator
+  RECRUITER // Can manage jobs and view applications
+  READONLY // View-only access
 
   @@map("user_role")
 }
 
+enum JobStatus {
+  DRAFT
+  OPEN
+  CLOSED
+
+  @@map("job_status")
+}
+
+enum ApplicationStatus {
+  APPLIED
+  REVIEWING
+  REJECTED
+  HIRED
+
+  @@map("application_status")
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  TEXT
+
+  @@map("question_type")
+}
+
+// =====================================================
+// JOB POSTING
+// =====================================================
+
+model Job {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title         String    @db.Text
+  description   String?   @db.Text
+  requirements  String?   @db.Text
+  status        JobStatus @default(OPEN)
+  openPositions Int?
+  createdAt     DateTime  @default(now()) @db.Timestamptz
+  updatedAt     DateTime  @updatedAt @db.Timestamptz
+
+  // Foreign Keys
+  branchId String @db.Uuid
+  branch   Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  // Relationships
+  templates       AssessmentTemplate[]
+  jobApplications JobApplication[]
+  scoringConfig   ScoringConfig?
+
+  // Business & performance
+  @@unique([branchId, title])
+  @@index([status])
+  @@map("jobs")
+}
+
+// =====================================================
+// APPLICANT TRACKING
+// =====================================================
+
+model Applicant {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email     String   @unique @db.Text
+  firstName String   @db.Text
+  lastName  String   @db.Text
+  phone     String?  @db.Text
+  city      String?  @db.Text
+  country   String?  @db.Text
+  address   String?  @db.Text
+  resumeUrl String?  @db.Text
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  // Relationships
+  assessments     ApplicantAssessment[]
+  jobApplications JobApplication[]
+
+  // Indexes for search & filters
+  @@index([lastName, firstName])
+  @@index([city, country])
+  @@map("applicants")
+}
+
+model JobApplication {
+  id        String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  status    ApplicationStatus @default(APPLIED)
+  appliedAt DateTime          @default(now()) @db.Timestamptz
+  updatedAt DateTime          @updatedAt @db.Timestamptz
+
+  // Foreign Keys
+  applicantId String    @db.Uuid
+  applicant   Applicant @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  jobId       String    @db.Uuid
+  job         Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([applicantId, jobId]) // Prevent duplicate applications
+  @@index([status])
+  @@map("job_applications")
+}
+
+// =====================================================
+// ASSESSMENT TEMPLATES
+// =====================================================
+
+model AssessmentTemplate {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String   @db.Text
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @db.Timestamptz
+  updatedAt   DateTime @updatedAt @db.Timestamptz
+
+  // Optional tie to a job (could reuse templates across jobs)
+  jobId String? @db.Uuid
+  job   Job?    @relation(fields: [jobId], references: [id], onDelete: SetNull)
+
+  // Relationships
+  questions   AssessmentQuestion[]
+  assessments ApplicantAssessment[]
+
+  @@unique([jobId, name])
+  @@map("assessment_templates")
+}
+
+model AssessmentQuestion {
+  id             String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  templateId     String             @db.Uuid
+  template       AssessmentTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  text           String             @db.Text
+  type           QuestionType       @default(MULTIPLE_CHOICE)
+  weight         Float              @default(1.0)
+  order          Int                @default(0)
+  correctAnswer  String?            @db.Text
+  negativeWeight Float?             @db.DoublePrecision
+  createdAt      DateTime           @default(now()) @db.Timestamptz
+
+  // Relationships
+  answers ApplicantAnswer[]
+
+  @@unique([templateId, order])
+  @@index([templateId])
+  @@map("assessment_questions")
+}
+
+model ApplicantAssessment {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  submittedAt DateTime @default(now()) @db.Timestamptz
+
+  // Foreign Keys
+  applicantId String             @db.Uuid
+  applicant   Applicant          @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  templateId  String             @db.Uuid
+  template    AssessmentTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  // Relationships
+  answers ApplicantAnswer[]
+
+  @@index([applicantId, templateId])
+  @@map("applicant_assessments")
+}
+
+model ApplicantAnswer {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  answer    String?  @db.Text
+  isCorrect Boolean  @default(false)
+  createdAt DateTime @default(now()) @db.Timestamptz
+
+  // Foreign Keys
+  assessmentId String              @db.Uuid
+  assessment   ApplicantAssessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  questionId   String              @db.Uuid
+  question     AssessmentQuestion  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([assessmentId])
+  @@index([questionId])
+  @@map("applicant_answers")
+}
+
+// =====================================================
+// SCORING CONFIGURATION
+// =====================================================
+
+model ScoringConfig {
+  id                      String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  negativeMarkingFraction Float    @default(0.0)
+  recencyWindowDays       Int?
+  recencyBoostPercent     Float?
+  isDefault               Boolean  @default(false)
+  createdAt               DateTime @default(now()) @db.Timestamptz
+  updatedAt               DateTime @updatedAt @db.Timestamptz
+
+  // Optional job-specific override:
+  jobId String? @unique @db.Uuid
+  job   Job?    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@map("scoring_configs")
+}

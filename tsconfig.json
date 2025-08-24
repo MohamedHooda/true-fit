@@ -12,11 +12,19 @@
         "sourceMap": true,
         "skipLibCheck": true,
         "typeRoots": ["types", "node_modules/@types", "node"],
-        "baseUrl": "src/",
+        "baseUrl": "./",
+        "paths": {
+            "*": ["src/*", "node_modules/*"]
+        },
         "allowJs": true
     },
-    "include": ["src/**/*.ts"],
-    "exclude": ["node_modules", "<node_internals>/**", "**/*.spec.ts"],
+    "include": [
+        "src/**/*.ts",
+        "test/**/*.ts",
+        "src/types/authorisationModels.js",
+        "src/auth/requestAuthorisation"
+    ],
+    "exclude": ["node_modules", "<node_internals>/**"],
     "ts-node": {
         "files": true
     }
