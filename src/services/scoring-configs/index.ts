@@ -5,7 +5,7 @@ import {
     ScoringPreview,
 } from "types/scoring"
 import { ScoringConfigPool } from "persistence/db/pool/scoring-configs"
-import { ITrueFitEventRelaying } from "services/events"
+import { ITrueFitEventRelaying, TrueFitEventTypes } from "services/events"
 import { ServiceError, ServiceErrorType } from "types/serviceError"
 
 export interface IScoringConfigService {
@@ -137,15 +137,16 @@ class ScoringConfigService implements IScoringConfigService {
 
         const createdConfig = await this.pool.createScoringConfig(config)
 
-        // TODO: Add SCORING_CONFIG event types
-        // await this.events.dispatchEvent({
-        //     type: "SCORING_CONFIG_CREATED",
-        //     payload: {
-        //         configId: createdConfig.id,
-        //         isDefault: createdConfig.isDefault,
-        //         jobId: createdConfig.jobId,
-        //     }
-        // })
+        // Emit scoring config changed event for ranking recalculation
+        await this.events.dispatchEvent({
+            type: TrueFitEventTypes.SCORING_CONFIG_CHANGED,
+            payload: {
+                configId: createdConfig.id,
+                isDefault: createdConfig.isDefault,
+                jobId: createdConfig.jobId,
+                action: "created",
+            },
+        })
 
         return createdConfig
     }
@@ -193,14 +194,17 @@ class ScoringConfigService implements IScoringConfigService {
 
         const updatedConfig = await this.pool.updateScoringConfig(id, config)
 
-        // TODO: Add SCORING_CONFIG event types
-        // await this.events.dispatchEvent({
-        //     type: "SCORING_CONFIG_UPDATED",
-        //     payload: {
-        //         configId: id,
-        //         changes: config,
-        //     }
-        // })
+        // Emit scoring config changed event for ranking recalculation
+        await this.events.dispatchEvent({
+            type: TrueFitEventTypes.SCORING_CONFIG_CHANGED,
+            payload: {
+                configId: id,
+                isDefault: updatedConfig.isDefault,
+                jobId: updatedConfig.jobId,
+                action: "updated",
+                changes: config,
+            },
+        })
 
         return updatedConfig
     }

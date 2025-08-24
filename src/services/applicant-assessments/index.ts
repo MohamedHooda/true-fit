@@ -7,7 +7,7 @@ import {
     AssessmentStats,
 } from "types/applicant-assessment"
 import { ApplicantAssessmentPool } from "persistence/db/pool/applicant-assessments"
-import { ITrueFitEventRelaying } from "services/events"
+import { ITrueFitEventRelaying, TrueFitEventTypes } from "services/events"
 import { ServiceError, ServiceErrorType } from "types/serviceError"
 
 export interface IApplicantAssessmentService {
@@ -140,16 +140,17 @@ class ApplicantAssessmentService implements IApplicantAssessmentService {
 
         const assessment = await this.pool.submitAssessment(submission)
 
-        // TODO: Add ASSESSMENT event types
-        // await this.events.dispatchEvent({
-        //     type: "ASSESSMENT_SUBMITTED",
-        //     payload: {
-        //         assessmentId: assessment.id,
-        //         applicantId: assessment.applicantId,
-        //         templateId: assessment.templateId,
-        //         answersCount: assessment.answers.length,
-        //     }
-        // })
+        // Emit assessment submitted event for ranking recalculation
+        await this.events.dispatchEvent({
+            type: TrueFitEventTypes.ASSESSMENT_SUBMITTED,
+            payload: {
+                assessmentId: assessment.id,
+                applicantId: assessment.applicantId,
+                templateId: assessment.templateId,
+                jobId: assessment.template.job?.id, // Need job ID for ranking
+                answersCount: assessment.answers.length,
+            },
+        })
 
         return assessment
     }

@@ -159,9 +159,11 @@ model Job {
   branch   Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
 
   // Relationships
-  templates       AssessmentTemplate[]
-  jobApplications JobApplication[]
-  scoringConfig   ScoringConfig?
+  templates         AssessmentTemplate[]
+  jobApplications   JobApplication[]
+  scoringConfig     ScoringConfig?
+  candidateRankings CandidateRanking[]
+  rankingMetadata   JobRankingMetadata?
 
   // Business & performance
   @@unique([branchId, title])
@@ -187,8 +189,9 @@ model Applicant {
   updatedAt DateTime @updatedAt @db.Timestamptz
 
   // Relationships
-  assessments     ApplicantAssessment[]
-  jobApplications JobApplication[]
+  assessments       ApplicantAssessment[]
+  jobApplications   JobApplication[]
+  candidateRankings CandidateRanking[]
 
   // Indexes for search & filters
   @@index([lastName, firstName])
@@ -267,7 +270,8 @@ model ApplicantAssessment {
   template    AssessmentTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
 
   // Relationships
-  answers ApplicantAnswer[]
+  answers           ApplicantAnswer[]
+  candidateRankings CandidateRanking[]
 
   @@index([applicantId, templateId])
   @@map("applicant_assessments")
@@ -308,4 +312,68 @@ model ScoringConfig {
   job   Job?    @relation(fields: [jobId], references: [id], onDelete: Cascade)
 
   @@map("scoring_configs")
+}
+
+// =====================================================
+// CANDIDATE RANKING SYSTEM
+// =====================================================
+
+model CandidateRanking {
+  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  jobId                 String   @db.Uuid
+  applicantId           String   @db.Uuid
+  assessmentId          String   @db.Uuid
+  rank                  Int      // 1-based ranking
+  score                 Float    // Calculated score
+  maxPossibleScore      Float    // Maximum possible score for normalization
+  percentage            Float    // Score as percentage
+  correctAnswers        Int      // Number of correct answers
+  incorrectAnswers      Int      // Number of incorrect answers
+  recencyBonus          Float?   // Applied recency bonus points
+  scoringConfigVersion  String   @db.Text // Hash of scoring config for invalidation
+  calculatedAt          DateTime @default(now()) @db.Timestamptz
+  isStale               Boolean  @default(false) // Flag for invalidation
+
+  // Foreign Keys
+  job        Job                 @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  applicant  Applicant           @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  assessment ApplicantAssessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  // Business constraints & performance
+  @@unique([jobId, applicantId]) // One ranking per applicant per job (latest assessment)
+  @@index([jobId, rank]) // Fast top-N queries
+  @@index([jobId, isStale]) // Invalidation queries
+  @@index([scoringConfigVersion]) // Config change invalidation
+  @@index([calculatedAt]) // Cleanup old rankings
+  @@map("candidate_rankings")
+}
+
+enum RankingStatus {
+  CALCULATING
+  COMPLETED
+  STALE
+  ERROR
+
+  @@map("ranking_status")
+}
+
+model JobRankingMetadata {
+  id                   String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  jobId                String        @unique @db.Uuid
+  status               RankingStatus @default(CALCULATING)
+  totalCandidates      Int           @default(0)
+  lastCalculatedAt     DateTime?     @db.Timestamptz
+  calculationDuration  Int?          // Milliseconds
+  scoringConfigVersion String        @db.Text
+  triggerEvent         String?       @db.Text // What triggered the recalculation
+  errorMessage         String?       @db.Text
+  createdAt            DateTime      @default(now()) @db.Timestamptz
+  updatedAt            DateTime      @updatedAt @db.Timestamptz
+
+  // Foreign Keys
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([lastCalculatedAt])
+  @@map("job_ranking_metadata")
 }

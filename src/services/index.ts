@@ -22,6 +22,9 @@ import getApplicantAssessmentService, {
 import getScoringConfigService, {
     IScoringConfigService,
 } from "./scoring-configs"
+import getCandidateRankingService, {
+    ICandidateRankingService,
+} from "./candidate-rankings"
 import getJobPool from "persistence/db/pool/jobs"
 import getApplicantPool from "persistence/db/pool/applicants"
 import getJobApplicationPool from "persistence/db/pool/job-applications"
@@ -30,6 +33,7 @@ import getAssessmentQuestionPool from "persistence/db/pool/assessment-questions"
 import getApplicantAssessmentPool from "persistence/db/pool/applicant-assessments"
 import getApplicantAnswerPool from "persistence/db/pool/applicant-answers"
 import getScoringConfigPool from "persistence/db/pool/scoring-configs"
+import getCandidateRankingPool from "persistence/db/pool/candidate-rankings"
 
 /**
  * Pool registry interface for direct database access
@@ -46,6 +50,7 @@ export interface PoolRegistry {
     getApplicantAssessmentPool(): ReturnType<typeof getApplicantAssessmentPool>
     getApplicantAnswerPool(): ReturnType<typeof getApplicantAnswerPool>
     getScoringConfigPool(): ReturnType<typeof getScoringConfigPool>
+    getCandidateRankingPool(): ReturnType<typeof getCandidateRankingPool>
 }
 
 /**
@@ -61,6 +66,7 @@ export interface ServiceRegistry {
     getAssessmentQuestionService(): IAssessmentQuestionService
     getApplicantAssessmentService(): IApplicantAssessmentService
     getScoringConfigService(): IScoringConfigService
+    getCandidateRankingService(): ICandidateRankingService
 }
 
 export class Services implements ServiceRegistry, PoolRegistry {
@@ -200,6 +206,24 @@ export class Services implements ServiceRegistry, PoolRegistry {
         return this.services.get("scoringConfigService")
     }
 
+    getCandidateRankingService(): ICandidateRankingService {
+        if (!this.services.has("candidateRankingService")) {
+            const candidateRankingPool = getCandidateRankingPool(
+                this.db,
+                this.logger,
+            )
+            const candidateRankingService = getCandidateRankingService(
+                candidateRankingPool,
+                this.events,
+            )
+            this.services.set(
+                "candidateRankingService",
+                candidateRankingService,
+            )
+        }
+        return this.services.get("candidateRankingService")
+    }
+
     // Pool methods for direct database access
     getUserPool(): ReturnType<typeof getUserPool> {
         if (!this.pools.has("userPool")) {
@@ -304,6 +328,17 @@ export class Services implements ServiceRegistry, PoolRegistry {
             this.pools.set("scoringConfigPool", scoringConfigPool)
         }
         return this.pools.get("scoringConfigPool")
+    }
+
+    getCandidateRankingPool(): ReturnType<typeof getCandidateRankingPool> {
+        if (!this.pools.has("candidateRankingPool")) {
+            const candidateRankingPool = getCandidateRankingPool(
+                this.db,
+                this.logger,
+            )
+            this.pools.set("candidateRankingPool", candidateRankingPool)
+        }
+        return this.pools.get("candidateRankingPool")
     }
 }
 

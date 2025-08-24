@@ -16,9 +16,13 @@
         "eslint": "eslint .",
         "prettier": "prettier --write .",
         "healthcheck": "node node_modules/fastify-healthcheck/src/healthcheck http://localhost:3000/health",
-        "start": "node dist/src/server.js"
+        "start": "node dist/src/server.js",
+        "seed": "tsx scripts/seed.ts",
+        "seed:dev": "ts-node -r tsconfig-paths/register scripts/seed.ts",
+        "test:rankings": "ts-node -r tsconfig-paths/register scripts/test-rankings.ts"
     },
     "dependencies": {
+        "@faker-js/faker": "^8.4.1",
         "@fastify/autoload": "^5.7.1",
         "@fastify/basic-auth": "^5.1.0",
         "@fastify/cors": "^8.3.0",
