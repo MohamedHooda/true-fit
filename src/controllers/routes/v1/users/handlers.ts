@@ -5,7 +5,7 @@ import { ServiceError, ServiceErrorType } from "types/serviceError"
 import { RouteHandler } from "fastify"
 
 // Get all users
-export const getUsers: RouteHandler = async function (request, reply) {
+export const getUsers: RouteHandler = async function (this, request, reply) {
     const service = this.services.getUserService()
     try {
         const users = await service.getUsers()
@@ -19,7 +19,7 @@ export const getUsers: RouteHandler = async function (request, reply) {
 // Get user by ID
 export const getUserById: RouteHandler<{
     Params: { id: string }
-}> = async function (request, reply) {
+}> = async function (this, request, reply) {
     const service = this.services.getUserService()
     try {
         const user = await service.getUserById(request.params.id)
@@ -42,7 +42,7 @@ export const getUserById: RouteHandler<{
 // Create user
 export const createUser: RouteHandler<{
     Body: UserCreateRequest
-}> = async function (request, reply) {
+}> = async function (this, request, reply) {
     const service = this.services.getUserService()
     try {
         const user = await service.createUser(request.body)
@@ -57,7 +57,7 @@ export const createUser: RouteHandler<{
 export const updateUser: RouteHandler<{
     Params: { id: string }
     Body: UserUpdate
-}> = async function (request, reply) {
+}> = async function (this, request, reply) {
     const service = this.services.getUserService()
     try {
         const user = await service.updateUser(request.params.id, request.body)
@@ -71,7 +71,7 @@ export const updateUser: RouteHandler<{
 // Delete user
 export const deleteUser: RouteHandler<{
     Params: { id: string }
-}> = async function (request, reply) {
+}> = async function (this, request, reply) {
     const service = this.services.getUserService()
     try {
         await service.deleteUser(request.params.id)
@@ -85,7 +85,7 @@ export const deleteUser: RouteHandler<{
 // Login
 export const login: RouteHandler<{
     Body: LoginRequest
-}> = async function (request, reply) {
+}> = async function (this, request, reply) {
     const service = this.services.getUserService()
     try {
         const result = await service.login(
@@ -101,7 +101,7 @@ export const login: RouteHandler<{
 }
 
 // Get current user (me)
-export const getMe: RouteHandler = async function (request, reply) {
+export const getMe: RouteHandler = async function (this, request, reply) {
     const service = this.services.getUserService()
     try {
         if (!request.user) {
@@ -133,7 +133,7 @@ export const getMe: RouteHandler = async function (request, reply) {
 }
 
 // Logout
-export const logout: RouteHandler = async function (request, reply) {
+export const logout: RouteHandler = async function (this, request, reply) {
     const service = this.services.getUserService()
     try {
         if (!request.user) {
@@ -156,7 +156,7 @@ export const logout: RouteHandler = async function (request, reply) {
 }
 
 // Logout all sessions
-export const logoutAll: RouteHandler = async function (request, reply) {
+export const logoutAll: RouteHandler = async function (this, request, reply) {
     const service = this.services.getUserService()
     try {
         if (!request.user) {
@@ -184,7 +184,7 @@ export const changePassword: RouteHandler<{
         currentPassword: string
         newPassword: string
     }
-}> = async function (request, reply) {
+}> = async function (this, request, reply) {
     const service = this.services.getUserService()
     try {
         if (!request.user) {

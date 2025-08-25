@@ -13,6 +13,7 @@ import {
 } from "types/user"
 import { UserPool } from "persistence/db/pool/users"
 import { ITrueFitEventRelaying } from "services/events"
+import { ServiceError, ServiceErrorType } from "types/serviceError"
 
 export interface IUserService {
     /**
@@ -143,7 +144,6 @@ class UserService implements IUserService {
 
         if (user) {
             // Emit user deleted event
-            // TODO: Add USER event types
             // await this.events.dispatchEvent({
             //     type: "USER_DELETED",
             //     payload: {
@@ -162,7 +162,7 @@ class UserService implements IUserService {
         const updatedUser = await this.pool.updateUser(id, user)
 
         // Emit user updated event
-        // TODO: Add USER event types
+
         // await this.events.dispatchEvent({
         //     type: "USER_UPDATED",
         //     payload: {
@@ -184,7 +184,10 @@ class UserService implements IUserService {
         // Authenticate user
         const user = await this.pool.authenticateUser(email, password)
         if (!user) {
-            throw new Error("Invalid credentials")
+            throw new ServiceError(
+                ServiceErrorType.Forbidden,
+                "Invalid credentials",
+            )
         }
 
         // Create session
@@ -259,7 +262,7 @@ class UserService implements IUserService {
         await this.pool.deactivateSession(sessionId)
 
         // Emit logout event
-        // TODO: Add USER event types
+
         // await this.events.dispatchEvent({
         //     type: "USER_LOGOUT",
         //     payload: {
@@ -272,7 +275,7 @@ class UserService implements IUserService {
         await this.pool.deactivateAllUserSessions(userId)
 
         // Emit logout all event
-        // TODO: Add USER event types
+
         // await this.events.dispatchEvent({
         //     type: "USER_LOGOUT_ALL",
         //     payload: {
@@ -286,8 +289,14 @@ class UserService implements IUserService {
         currentPassword: string,
         newPassword: string,
     ): Promise<void> {
-        // Get user
-        const user = await this.pool.getUserByEmail("")
+        // Get user to verify they exist and get their email
+        const userWithSessions = await this.pool.getUserById(userId)
+        if (!userWithSessions) {
+            throw new Error("User not found")
+        }
+
+        // Get user with password hash for verification
+        const user = await this.pool.getUserByEmail(userWithSessions.email)
         if (!user) {
             throw new Error("User not found")
         }
@@ -313,7 +322,7 @@ class UserService implements IUserService {
         await this.pool.deactivateAllUserSessions(userId)
 
         // Emit password changed event
-        // TODO: Add USER event types
+
         // await this.events.dispatchEvent({
         //     type: "USER_PASSWORD_CHANGED",
         //     payload: {

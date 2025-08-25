@@ -1,6 +1,6 @@
 import { FastifyInstance } from "fastify"
 import fp from "fastify-plugin"
-import { getServices } from "services"
+import { getServices } from "../services"
 
 /**
  * Plugin that adds business logic services to the Fastify instance

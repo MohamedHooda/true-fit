@@ -1,0 +1,48 @@
+services:
+    postgres:
+        image: postgres:15
+        container_name: true-fit-postgres
+        environment:
+            POSTGRES_DB: true-fit
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: supersecret
+        ports:
+            - "5433:5432"
+        volumes:
+            - postgres_true_fit_data:/var/lib/postgresql/data
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U postgres"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+    backend:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: true-fit-backend
+        environment:
+            PORT: 4000
+            SWAGGER_USERNAME: admin
+            SWAGGER_PASSWORD: admin
+            DATABASE_URL: postgres://postgres:supersecret@postgres:5432/true-fit
+            JWT_SECRET: supersecret
+            NODE_ENV: dev
+            # Seeding Configuration
+            SEED_MODE: ${SEED_MODE:-auto} # none, production, auto
+            SEED_APPLICANT_COUNT: ${SEED_APPLICANT_COUNT:-10} # Number of applicants for production seed
+            SKIP_SEED: ${SKIP_SEED:-false} # Set to true to skip all seeding
+            RUN_MASS_TEST: true # Enable production seed script
+
+        ports:
+            - "4000:4000"
+        depends_on:
+            postgres:
+                condition: service_healthy
+        volumes:
+            - ./scripts:/home/nodejs/app/scripts
+            - ./src:/home/nodejs/app/src
+        command: ["./docker-entrypoint.sh"]
+
+volumes:
+    postgres_true_fit_data:

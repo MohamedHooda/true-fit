@@ -107,7 +107,7 @@ class BranchService implements IBranchService {
         const createdBranch = await this.branchPool.createBranch(branchToCreate)
 
         // Emit branch created event
-        // TODO: Add BRANCH_CREATED event type to TrueFitEventTypes
+
         // await this.events.dispatchEvent({
         //     type: "BRANCH_CREATED",
         //     payload: {
@@ -138,7 +138,7 @@ class BranchService implements IBranchService {
         await this.branchPool.deleteBranch(id)
 
         // Emit branch deleted event
-        // TODO: Add BRANCH event types
+
         // await this.events.dispatchEvent({
         //     type: "BRANCH_DELETED",
         //     payload: {
@@ -180,7 +180,7 @@ class BranchService implements IBranchService {
         const updatedBranch = await this.branchPool.updateBranch(id, branch)
 
         // Emit branch updated event
-        // TODO: Add BRANCH event types
+
         // await this.events.dispatchEvent({
         //     type: "BRANCH_UPDATED",
         //     payload: {

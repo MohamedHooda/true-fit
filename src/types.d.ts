@@ -1,7 +1,7 @@
 import { DB } from "persistence/db"
 import { AuthenticatedUser } from "types/user"
 import { type } from "os"
-import { ServiceRegistry } from "services"
+import { ServiceRegistry } from "./services"
 import {
     preHandlerHookHandler,
     onRequestHookHandler,
