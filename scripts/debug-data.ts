@@ -6,7 +6,7 @@ import { PrismaClient } from "@prisma/client"
 const prisma = new PrismaClient()
 
 async function debugData() {
-    console.log("🔍 Debugging Data Relationships...")
+    console.log("Debugging Data Relationships...")
 
     try {
         // Check jobs and their assessment templates
@@ -118,7 +118,7 @@ async function debugData() {
         }
 
         // Check if any assessments are linked to jobs through templates
-        console.log("\n\n🔗 Assessment-Job Linkage Test:")
+        console.log("\n\nAssessment-Job Linkage Test:")
         const testQuery = await prisma.applicantAssessment.findMany({
             where: {
                 template: {
