@@ -803,14 +803,11 @@ async function main() {
 
             if (results.successCount > 0) {
                 console.log(
-                    "⏳ Assessments submitted - triggering final ranking calculation...",
+                    "⏳ Assessments submitted - rankings updating automatically...",
                 )
 
-                // Manually trigger ranking calculation to ensure it's up to date
-                await triggerRankingCalculation(api, jobId)
-
-                // Wait a moment for rankings to be fully processed
-                await new Promise((resolve) => setTimeout(resolve, 2000))
+                // Wait a moment for automatic rankings to be processed
+                await new Promise((resolve) => setTimeout(resolve, 3000))
             }
         }
 
