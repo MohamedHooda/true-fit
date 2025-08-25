@@ -68,7 +68,6 @@ describe("JobService CRUD", async function () {
             expect(job.branchId).to.equal(branchId)
             expect(job.id).to.be.a("string")
             expect(job.createdAt).to.exist
-            // Note: updatedAt might be null in prismock for newly created records
         })
 
         it("should create a job with minimal required fields", async function () {

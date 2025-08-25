@@ -12,42 +12,20 @@ import {
 } from "types/applicant-assessment"
 
 export interface ApplicantAssessmentPool {
-    /**
-     * Get an assessment by ID
-     * @param {string} id - The ID of the assessment to get
-     * @returns {Promise<ApplicantAssessmentWithDetails | null>} - The assessment with details
-     */
     getAssessmentById(
         id: string,
     ): Promise<ApplicantAssessmentWithDetails | null>
 
-    /**
-     * Get assessments with optional filters
-     * @param {AssessmentFilters} filters - Optional filters to apply
-     * @param {number} limit - Maximum number of assessments to return
-     * @param {number} offset - Number of assessments to skip
-     * @returns {Promise<ApplicantAssessmentWithDetails[]>} - The assessments with details
-     */
     getAssessments(
         filters?: AssessmentFilters,
         limit?: number,
         offset?: number,
     ): Promise<ApplicantAssessmentWithDetails[]>
 
-    /**
-     * Submit an assessment
-     * @param {AssessmentSubmission} submission - The assessment submission
-     * @returns {Promise<ApplicantAssessmentWithDetails>} - The submitted assessment
-     */
     submitAssessment(
         submission: AssessmentSubmission,
     ): Promise<ApplicantAssessmentWithDetails>
 
-    /**
-     * Get assessment score
-     * @param {string} id - The ID of the assessment
-     * @returns {Promise<AssessmentScoreWithDetails>} - The assessment score with details
-     */
     getAssessmentScore(id: string): Promise<AssessmentScoreWithDetails>
 
     /**
@@ -91,6 +69,12 @@ class ApplicantAssessmentPoolImpl implements ApplicantAssessmentPool {
                             phone: true,
                             city: true,
                             country: true,
+                        },
+                    },
+                    job: {
+                        select: {
+                            id: true,
+                            title: true,
                         },
                     },
                     template: {
@@ -227,6 +211,7 @@ class ApplicantAssessmentPoolImpl implements ApplicantAssessmentPool {
                     data: {
                         applicantId: submission.applicantId,
                         templateId: submission.templateId,
+                        jobId: submission.jobId,
                         submittedAt: new Date(),
                     },
                 })
@@ -273,6 +258,12 @@ class ApplicantAssessmentPoolImpl implements ApplicantAssessmentPool {
                                 phone: true,
                                 city: true,
                                 country: true,
+                            },
+                        },
+                        job: {
+                            select: {
+                                id: true,
+                                title: true,
                             },
                         },
                         template: {

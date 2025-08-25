@@ -83,7 +83,6 @@ class AssessmentQuestionService implements IAssessmentQuestionService {
             question,
         )
 
-        // TODO: Add ASSESSMENT_QUESTION event types
         // await this.events.dispatchEvent({
         //     type: "ASSESSMENT_QUESTION_CREATED",
         //     payload: {
@@ -104,7 +103,6 @@ class AssessmentQuestionService implements IAssessmentQuestionService {
             question,
         )
 
-        // TODO: Add ASSESSMENT_QUESTION event types
         // await this.events.dispatchEvent({
         //     type: "ASSESSMENT_QUESTION_UPDATED",
         //     payload: {
@@ -123,7 +121,6 @@ class AssessmentQuestionService implements IAssessmentQuestionService {
         await this.pool.deleteAssessmentQuestion(id)
 
         if (question) {
-            // TODO: Add ASSESSMENT_QUESTION event types
             // await this.events.dispatchEvent({
             //     type: "ASSESSMENT_QUESTION_DELETED",
             //     payload: {

@@ -389,7 +389,6 @@ describe("CompanyService CRUD", async function () {
             expect(firstPage.length).to.equal(2)
             expect(secondPage.length).to.equal(2)
 
-            // Ensure they're different companies
             const firstPageIds = firstPage.map((c) => c.id)
             const secondPageIds = secondPage.map((c) => c.id)
             expect(firstPageIds).to.not.deep.equal(secondPageIds)

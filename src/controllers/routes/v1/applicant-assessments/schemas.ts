@@ -11,6 +11,7 @@ export const ApplicantAssessmentSchema = Type.Object({
 // Assessment with Details Schema
 export const ApplicantAssessmentWithDetailsSchema = Type.Object({
     ...ApplicantAssessmentSchema.properties,
+    jobId: Type.String(),
     applicant: Type.Object({
         id: Type.String(),
         email: Type.String(),
@@ -20,6 +21,13 @@ export const ApplicantAssessmentWithDetailsSchema = Type.Object({
         city: Type.Union([Type.String(), Type.Null()]),
         country: Type.Union([Type.String(), Type.Null()]),
     }),
+    job: Type.Union([
+        Type.Object({
+            id: Type.String(),
+            title: Type.String(),
+        }),
+        Type.Null(),
+    ]),
     template: Type.Object({
         id: Type.String(),
         name: Type.String(),

@@ -144,7 +144,6 @@ class UserService implements IUserService {
 
         if (user) {
             // Emit user deleted event
-            // TODO: Add USER event types
             // await this.events.dispatchEvent({
             //     type: "USER_DELETED",
             //     payload: {
@@ -163,7 +162,7 @@ class UserService implements IUserService {
         const updatedUser = await this.pool.updateUser(id, user)
 
         // Emit user updated event
-        // TODO: Add USER event types
+
         // await this.events.dispatchEvent({
         //     type: "USER_UPDATED",
         //     payload: {
@@ -263,7 +262,7 @@ class UserService implements IUserService {
         await this.pool.deactivateSession(sessionId)
 
         // Emit logout event
-        // TODO: Add USER event types
+
         // await this.events.dispatchEvent({
         //     type: "USER_LOGOUT",
         //     payload: {
@@ -276,7 +275,7 @@ class UserService implements IUserService {
         await this.pool.deactivateAllUserSessions(userId)
 
         // Emit logout all event
-        // TODO: Add USER event types
+
         // await this.events.dispatchEvent({
         //     type: "USER_LOGOUT_ALL",
         //     payload: {
@@ -323,7 +322,7 @@ class UserService implements IUserService {
         await this.pool.deactivateAllUserSessions(userId)
 
         // Emit password changed event
-        // TODO: Add USER event types
+
         // await this.events.dispatchEvent({
         //     type: "USER_PASSWORD_CHANGED",
         //     payload: {

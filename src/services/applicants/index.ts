@@ -93,7 +93,6 @@ class ApplicantService implements IApplicantService {
 
         const createdApplicant = await this.pool.createApplicant(applicant)
 
-        // TODO: Add APPLICANT event types
         // await this.events.dispatchEvent({
         //     type: "APPLICANT_CREATED",
         //     payload: {
@@ -113,7 +112,6 @@ class ApplicantService implements IApplicantService {
         await this.pool.deleteApplicant(id)
 
         if (applicant) {
-            // TODO: Add APPLICANT event types
             // await this.events.dispatchEvent({
             //     type: "APPLICANT_DELETED",
             //     payload: {
@@ -139,7 +137,6 @@ class ApplicantService implements IApplicantService {
     ): Promise<Applicant> {
         const updatedApplicant = await this.pool.updateApplicant(id, applicant)
 
-        // TODO: Add APPLICANT event types
         // await this.events.dispatchEvent({
         //     type: "APPLICANT_UPDATED",
         //     payload: {

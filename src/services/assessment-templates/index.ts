@@ -112,7 +112,6 @@ class AssessmentTemplateService implements IAssessmentTemplateService {
             template,
         )
 
-        // TODO: Add ASSESSMENT_TEMPLATE event types
         // await this.events.dispatchEvent({
         //     type: "ASSESSMENT_TEMPLATE_CREATED",
         //     payload: {
@@ -132,7 +131,6 @@ class AssessmentTemplateService implements IAssessmentTemplateService {
         await this.pool.deleteAssessmentTemplate(id)
 
         if (template) {
-            // TODO: Add ASSESSMENT_TEMPLATE event types
             // await this.events.dispatchEvent({
             //     type: "ASSESSMENT_TEMPLATE_DELETED",
             //     payload: {
@@ -180,7 +178,6 @@ class AssessmentTemplateService implements IAssessmentTemplateService {
             template,
         )
 
-        // TODO: Add ASSESSMENT_TEMPLATE event types
         // await this.events.dispatchEvent({
         //     type: "ASSESSMENT_TEMPLATE_UPDATED",
         //     payload: {
@@ -214,7 +211,6 @@ class AssessmentTemplateService implements IAssessmentTemplateService {
             newJobId,
         )
 
-        // TODO: Add ASSESSMENT_TEMPLATE event types
         // await this.events.dispatchEvent({
         //     type: "ASSESSMENT_TEMPLATE_DUPLICATED",
         //     payload: {

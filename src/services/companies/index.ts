@@ -108,7 +108,7 @@ class CompanyService implements ICompanyService {
         }
 
         // Emit company created event
-        // TODO: Add COMPANY_CREATED event type to TrueFitEventTypes
+
         // await this.events.dispatchEvent({
         //     type: "COMPANY_CREATED",
         //     payload: {
@@ -129,7 +129,6 @@ class CompanyService implements ICompanyService {
 
         if (company) {
             // Emit company deleted event
-            // TODO: Add COMPANY event types
             // await this.events.dispatchEvent({
             //     type: "COMPANY_DELETED",
             //     payload: {
@@ -161,7 +160,7 @@ class CompanyService implements ICompanyService {
         const updatedCompany = await this.pool.updateCompany(id, company)
 
         // Emit company updated event
-        // TODO: Add COMPANY event types
+
         // await this.events.dispatchEvent({
         //     type: "COMPANY_UPDATED",
         //     payload: {

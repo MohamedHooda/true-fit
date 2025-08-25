@@ -66,21 +66,21 @@ ensure_test_user() {
     fi
 }
 
-# Function to run mass applicant test
+# Function to run claude production seed
 run_mass_test() {
-    echo "🎯 Running mass applicant test with dynamic environment creation..."
+    echo "🎯 Running Claude Production Seed - Complete Test Environment Creation..."
     
     # Wait a moment for the server to be fully ready
     sleep 5
     
-    # Run the test which will create company, job, template, and applicants
-    npx ts-node scripts/mass-applicant-test-axios.ts --create
+    # Run the claude production seed script which creates a comprehensive environment
+    npx ts-node scripts/production-seed.ts
     
     if [ $? -eq 0 ]; then
-        echo "✅ Mass applicant test completed successfully!"
-        echo "🎉 Test environment created with ranking system working!"
+        echo "✅ Claude Production Seed completed successfully!"
+        echo "🎉 Complete production-style environment created with ranking system working!"
     else
-        echo "❌ Mass applicant test failed"
+        echo "❌ Claude Production Seed failed"
         exit 1
     fi
 }
@@ -109,8 +109,8 @@ main() {
     
     # Check if we should run the test scenario
     if [ "$RUN_MASS_TEST" = "true" ]; then
-        echo "🎯 Mass test mode enabled - will create complete test environment!"
-        echo "📊 Target applicant count: ${DEMO_APPLICANT_COUNT:-10}"
+        echo "🎯 Claude Production Seed mode enabled - will create complete production-style environment!"
+        echo "📊 Creating: 5 companies, 20 jobs, 2 assessment templates, 10 applicants with rankings"
         echo ""
         
         # Start the application in the background
@@ -133,10 +133,10 @@ main() {
         
         # Keep the application running
         echo ""
-        echo "🎉 TrueFit API is now running with complete test data!"
+        echo "🎉 TrueFit API is now running with complete production-style test data!"
         echo "🌐 Access Swagger UI at: http://localhost:4000/docs"
         echo "🔑 Swagger credentials: admin / admin"
-        echo "📊 Test data includes: Company, Job, Assessment Template, ${DEMO_APPLICANT_COUNT:-10} Applicants with Rankings"
+        echo "📊 Data includes: 5 Companies, 20 Jobs, 2 Assessment Templates, 10 Applicants with Full Rankings"
         echo "🏃 Press Ctrl+C to stop."
         wait $APP_PID
         

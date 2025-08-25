@@ -75,7 +75,6 @@ class JobService implements IJobService {
     async createJob(job: JobCreate): Promise<Job> {
         const createdJob = await this.pool.createJob(job)
 
-        // TODO: Add JOB event types
         // await this.events.dispatchEvent({
         //     type: "JOB_CREATED",
         //     payload: {
@@ -95,7 +94,6 @@ class JobService implements IJobService {
         await this.pool.deleteJob(id)
 
         if (job) {
-            // TODO: Add JOB event types
             // await this.events.dispatchEvent({
             //     type: "JOB_DELETED",
             //     payload: {
@@ -118,7 +116,6 @@ class JobService implements IJobService {
     async updateJob(id: string, job: JobUpdate): Promise<Job> {
         const updatedJob = await this.pool.updateJob(id, job)
 
-        // TODO: Add JOB event types
         // await this.events.dispatchEvent({
         //     type: "JOB_UPDATED",
         //     payload: {

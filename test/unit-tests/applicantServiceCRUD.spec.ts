@@ -48,7 +48,6 @@ describe("ApplicantService CRUD", async function () {
             )
             expect(applicant.id).to.be.a("string")
             expect(applicant.createdAt).to.exist
-            // Note: updatedAt might be null in prismock for newly created records
         })
 
         it("should create an applicant with minimal required fields", async function () {
@@ -375,7 +374,7 @@ describe("ApplicantService CRUD", async function () {
             expect(stats.total).to.be.greaterThan(0)
             expect(stats.withAssessments).to.be.a("number")
             expect(stats.withApplications).to.be.a("number")
-            // Note: withAssessments and withApplications will be 0 in tests
+
             // since we're not creating assessments or applications
             expect(stats.withAssessments).to.be.at.least(0)
             expect(stats.withApplications).to.be.at.least(0)

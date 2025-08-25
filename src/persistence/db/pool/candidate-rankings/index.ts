@@ -246,7 +246,7 @@ class CandidateRankingPoolImpl implements CandidateRankingPool {
                     calculationDuration,
                     rankedCandidates: rankedCandidates.map((r) => ({
                         ...r,
-                        id: crypto.randomUUID(), // Temporary ID
+                        id: crypto.randomUUID(),
                     })),
                     scoringConfigVersion: configVersion,
                 }
@@ -313,7 +313,7 @@ class CandidateRankingPoolImpl implements CandidateRankingPool {
                     at.id as "templateId"
                 FROM applicant_assessments aa
                 JOIN assessment_templates at ON aa."templateId" = at.id
-                WHERE at."jobId" = ${jobId}::uuid
+                WHERE aa."jobId" = ${jobId}::uuid
                 ORDER BY aa."applicantId", aa."submittedAt" DESC
             ),
             ScoredAnswers AS (

@@ -227,7 +227,6 @@ class ScoringConfigService implements IScoringConfigService {
 
         await this.pool.deleteScoringConfig(id)
 
-        // TODO: Add SCORING_CONFIG event types
         // await this.events.dispatchEvent({
         //     type: "SCORING_CONFIG_DELETED",
         //     payload: {
@@ -254,7 +253,6 @@ class ScoringConfigService implements IScoringConfigService {
             jobId,
         )
 
-        // TODO: Add SCORING_CONFIG event types
         // await this.events.dispatchEvent({
         //     type: "SCORING_CONFIG_APPLIED",
         //     payload: {

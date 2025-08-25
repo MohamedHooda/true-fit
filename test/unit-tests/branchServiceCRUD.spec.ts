@@ -444,7 +444,6 @@ describe("BranchService CRUD", async function () {
             expect(firstPage.length).to.equal(2)
             expect(secondPage.length).to.equal(2)
 
-            // Ensure they're different branches
             const firstPageIds = firstPage.map((b) => b.id)
             const secondPageIds = secondPage.map((b) => b.id)
             expect(firstPageIds).to.not.deep.equal(secondPageIds)

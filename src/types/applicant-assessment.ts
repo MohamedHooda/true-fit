@@ -11,6 +11,10 @@ export interface ApplicantAssessmentWithDetails extends ApplicantAssessment {
         city?: string | null
         country?: string | null
     }
+    job?: {
+        id: string
+        title: string
+    } | null
     template: {
         id: string
         name: string

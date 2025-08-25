@@ -77,7 +77,18 @@ export class Services implements ServiceRegistry, PoolRegistry {
         private db: DB,
         private logger: Logger,
         private events: ITrueFitEventRelaying,
-    ) {}
+    ) {
+        // Initialize services with event listeners immediately
+        this.initializeEventListeners()
+    }
+
+    /**
+     * Initialize services that need to register event listeners at startup
+     */
+    private initializeEventListeners(): void {
+        // Initialize CandidateRankingService to register ASSESSMENT_SUBMITTED event listeners
+        this.getCandidateRankingService()
+    }
 
     private getService(name: string): any {
         const service = this.services.get(name)

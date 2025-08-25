@@ -23,7 +23,7 @@ const api = axios.create({
 // Check if user exists by trying to login
 async function userExists(): Promise<boolean> {
     try {
-        console.log(`🔍 Checking if user ${TEST_USER.email} exists...`)
+        console.log(`Checking if user ${TEST_USER.email} exists...`)
 
         const response = await api.post("/v1/users/login", {
             email: TEST_USER.email,
@@ -54,7 +54,7 @@ async function userExists(): Promise<boolean> {
 // Create the test user
 async function createTestUser(): Promise<boolean> {
     try {
-        console.log(`🔨 Creating test user ${TEST_USER.email}...`)
+        console.log(`Creating test user ${TEST_USER.email}...`)
 
         const response = await api.post("/v1/users", TEST_USER)
 
@@ -83,7 +83,7 @@ async function createTestUser(): Promise<boolean> {
 // Main function
 async function ensureTestUser(): Promise<boolean> {
     try {
-        console.log("🎯 TrueFit API - Test User Setup")
+        console.log("TrueFit API - Test User Setup")
         console.log("=================================")
         console.log("")
 

@@ -9,7 +9,7 @@ services:
         ports:
             - "5433:5432"
         volumes:
-            - postgres_data:/var/lib/postgresql/data
+            - postgres_true_fit_data:/var/lib/postgresql/data
         healthcheck:
             test: ["CMD-SHELL", "pg_isready -U postgres"]
             interval: 10s
@@ -28,8 +28,12 @@ services:
             DATABASE_URL: postgres://postgres:supersecret@postgres:5432/true-fit
             JWT_SECRET: supersecret
             NODE_ENV: dev
-            RUN_MASS_TEST: "true"
-            DEMO_APPLICANT_COUNT: "10"
+            # Seeding Configuration
+            SEED_MODE: ${SEED_MODE:-auto} # none, production, auto
+            SEED_APPLICANT_COUNT: ${SEED_APPLICANT_COUNT:-10} # Number of applicants for production seed
+            SKIP_SEED: ${SKIP_SEED:-false} # Set to true to skip all seeding
+            RUN_MASS_TEST: true # Enable production seed script
+
         ports:
             - "4000:4000"
         depends_on:
@@ -41,4 +45,4 @@ services:
         command: ["./docker-entrypoint.sh"]
 
 volumes:
-    postgres_data:
+    postgres_true_fit_data:

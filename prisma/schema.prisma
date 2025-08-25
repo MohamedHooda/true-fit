@@ -161,6 +161,7 @@ model Job {
   // Relationships
   templates         AssessmentTemplate[]
   jobApplications   JobApplication[]
+  assessments       ApplicantAssessment[]
   scoringConfig     ScoringConfig?
   candidateRankings CandidateRanking[]
   rankingMetadata   JobRankingMetadata?
@@ -268,12 +269,15 @@ model ApplicantAssessment {
   applicant   Applicant          @relation(fields: [applicantId], references: [id], onDelete: Cascade)
   templateId  String             @db.Uuid
   template    AssessmentTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  jobId       String             @db.Uuid
+  job         Job                @relation(fields: [jobId], references: [id], onDelete: Cascade)
 
   // Relationships
   answers           ApplicantAnswer[]
   candidateRankings CandidateRanking[]
 
   @@index([applicantId, templateId])
+  @@index([jobId])
   @@map("applicant_assessments")
 }
 
