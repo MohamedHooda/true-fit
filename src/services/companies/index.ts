@@ -7,6 +7,7 @@ import {
 } from "types/company"
 import { CompanyPool } from "persistence/db/pool/companies"
 import { ITrueFitEventRelaying } from "services/events"
+import { ServiceError, ServiceErrorType } from "types/serviceError"
 
 export interface ICompanyService {
     /**
@@ -77,7 +78,10 @@ class CompanyService implements ICompanyService {
         // Validate company name uniqueness
         const existingCompany = await this.pool.getCompanyByName(company.name)
         if (existingCompany) {
-            throw new Error("Company with this name already exists")
+            throw new ServiceError(
+                ServiceErrorType.DuplicateValue,
+                "Company with this name already exists",
+            )
         }
 
         // Extract company data and branches
@@ -153,7 +157,10 @@ class CompanyService implements ICompanyService {
                 company.name,
             )
             if (existingCompany && existingCompany.id !== id) {
-                throw new Error("Company with this name already exists")
+                throw new ServiceError(
+                    ServiceErrorType.DuplicateValue,
+                    "Company with this name already exists",
+                )
             }
         }
 

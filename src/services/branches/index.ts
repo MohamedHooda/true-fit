@@ -8,6 +8,7 @@ import {
 import { BranchPool } from "persistence/db/pool/branches"
 import { CompanyPool } from "persistence/db/pool/companies"
 import { ITrueFitEventRelaying } from "services/events"
+import { ServiceError, ServiceErrorType } from "types/serviceError"
 
 export interface IBranchService {
     /**
@@ -74,13 +75,19 @@ class BranchService implements IBranchService {
         branch: BranchCreateRequest,
     ): Promise<BranchCreateResponse> {
         if (!branch.companyId) {
-            throw new Error("Company ID is required")
+            throw new ServiceError(
+                ServiceErrorType.InvalidInput,
+                "Company ID is required",
+            )
         }
 
         // Validate that the company exists
         const company = await this.companyPool.getCompanyById(branch.companyId)
         if (!company) {
-            throw new Error("Company not found")
+            throw new ServiceError(
+                ServiceErrorType.NotFound,
+                "Company not found",
+            )
         }
 
         // Validate branch name uniqueness within the company
@@ -89,7 +96,8 @@ class BranchService implements IBranchService {
             branch.name,
         )
         if (nameExists) {
-            throw new Error(
+            throw new ServiceError(
+                ServiceErrorType.DuplicateValue,
                 "Branch with this name already exists for this company",
             )
         }
@@ -124,7 +132,10 @@ class BranchService implements IBranchService {
         // Get branch before deletion for validation and event
         const branch = await this.branchPool.getBranchById(id)
         if (!branch) {
-            throw new Error("Branch not found")
+            throw new ServiceError(
+                ServiceErrorType.NotFound,
+                "Branch not found",
+            )
         }
 
         // Check if this is the last branch for the company
@@ -132,7 +143,10 @@ class BranchService implements IBranchService {
             branch.companyId,
         )
         if (companyBranches.length === 1) {
-            throw new Error("Cannot delete the last branch of a company")
+            throw new ServiceError(
+                ServiceErrorType.InvalidInput,
+                "Cannot delete the last branch of a company",
+            )
         }
 
         await this.branchPool.deleteBranch(id)
@@ -160,7 +174,10 @@ class BranchService implements IBranchService {
         // Get existing branch to validate company and current state
         const existingBranch = await this.branchPool.getBranchById(id)
         if (!existingBranch) {
-            throw new Error("Branch not found")
+            throw new ServiceError(
+                ServiceErrorType.NotFound,
+                "Branch not found",
+            )
         }
 
         // Validate branch name uniqueness within the company if name is being updated
@@ -171,7 +188,8 @@ class BranchService implements IBranchService {
                 id, // Exclude current branch from check
             )
             if (nameExists) {
-                throw new Error(
+                throw new ServiceError(
+                    ServiceErrorType.DuplicateValue,
                     "Branch with this name already exists for this company",
                 )
             }

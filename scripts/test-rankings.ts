@@ -10,7 +10,7 @@ import AwaitableEventRelaying from "../src/services/events/awaitable"
 const prisma = new PrismaClient()
 
 async function testRankings() {
-    console.log("🧪 Testing Candidate Ranking System...")
+    console.log("Testing Candidate Ranking System...")
 
     try {
         // Set up services

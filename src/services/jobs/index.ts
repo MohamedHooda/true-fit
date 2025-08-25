@@ -9,6 +9,7 @@ import {
 } from "types/job"
 import { JobPool } from "persistence/db/pool/jobs"
 import { ITrueFitEventRelaying } from "services/events"
+import { ServiceError, ServiceErrorType } from "types/serviceError"
 
 export interface IJobService {
     /**
@@ -132,7 +133,10 @@ class JobService implements IJobService {
         companyId?: string,
     ): Promise<JobStats> {
         if (!companyId && !branchId) {
-            throw new Error("Either branchId or companyId must be provided")
+            throw new ServiceError(
+                ServiceErrorType.InvalidInput,
+                "Either branchId or companyId must be provided",
+            )
         }
         return this.pool.getJobsStats(companyId || branchId!)
     }

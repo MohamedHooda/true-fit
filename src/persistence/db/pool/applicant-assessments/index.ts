@@ -10,6 +10,7 @@ import {
     AssessmentFilters,
     AssessmentStats,
 } from "types/applicant-assessment"
+import { ServiceError, ServiceErrorType } from "types/serviceError"
 
 export interface ApplicantAssessmentPool {
     getAssessmentById(
@@ -228,7 +229,8 @@ class ApplicantAssessmentPoolImpl implements ApplicantAssessmentPool {
                             (q) => q.id === answer.questionId,
                         )
                         if (!question) {
-                            throw new Error(
+                            throw new ServiceError(
+                                ServiceErrorType.NotFound,
                                 `Question ${answer.questionId} not found`,
                             )
                         }
@@ -302,7 +304,10 @@ class ApplicantAssessmentPoolImpl implements ApplicantAssessmentPool {
             })
 
             if (!result) {
-                throw new Error("Failed to create assessment")
+                throw new ServiceError(
+                    ServiceErrorType.InternalError,
+                    "Failed to create assessment",
+                )
             }
 
             return result
@@ -347,7 +352,10 @@ class ApplicantAssessmentPoolImpl implements ApplicantAssessmentPool {
             )
 
             if (!assessment) {
-                throw new Error("Assessment not found")
+                throw new ServiceError(
+                    ServiceErrorType.NotFound,
+                    "Assessment not found",
+                )
             }
 
             // Get scoring config (job-specific or default)
@@ -358,7 +366,10 @@ class ApplicantAssessmentPoolImpl implements ApplicantAssessmentPool {
                 }))
 
             if (!scoringConfig) {
-                throw new Error("No scoring configuration found")
+                throw new ServiceError(
+                    ServiceErrorType.NotFound,
+                    "No scoring configuration found",
+                )
             }
 
             // Calculate base score
