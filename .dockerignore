@@ -19,7 +19,6 @@ dist
 .eslintcache
 *.tgz
 *.tar.gz
-claude.md
 API.md
 API_TESTING_PLAN.md
 test

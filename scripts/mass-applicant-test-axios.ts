@@ -282,7 +282,7 @@ function createAuthenticatedAxios(token: string) {
 
 // Create a company for testing
 async function createCompany(api: any): Promise<string> {
-    console.log("🏢 Creating test company...")
+    console.log("Creating test company...")
 
     try {
         const timestamp = Date.now()
@@ -496,7 +496,7 @@ async function createJob(api: any, companyId: string): Promise<string> {
 
 // Setup complete test environment (default config, company, job, scoring config, template)
 async function setupTestEnvironment(api: any): Promise<string> {
-    console.log("🛠️  Setting up complete test environment...")
+    console.log("Setting up complete test environment...")
     console.log("")
 
     try {
@@ -520,7 +520,7 @@ async function setupTestEnvironment(api: any): Promise<string> {
         TEMPLATE_ID = await createAssessmentTemplate(api, JOB_ID)
         console.log("")
 
-        console.log("🎉 Test environment setup completed!")
+        console.log("Test environment setup completed!")
         console.log(`🏢 Company ID: ${COMPANY_ID}`)
         console.log(`💼 Job ID: ${JOB_ID}`)
         console.log(`⚙️ Job Scoring Config ID: ${SCORING_CONFIG_ID}`)
@@ -784,7 +784,7 @@ async function triggerRankingCalculation(api: any, jobId: string) {
 // Main function
 async function main() {
     try {
-        console.log("🎯 TrueFit API - Mass Applicant Testing Script (AXIOS)")
+        console.log("TrueFit API - Mass Applicant Testing Script (AXIOS)")
         console.log("=====================================================")
         console.log("")
 

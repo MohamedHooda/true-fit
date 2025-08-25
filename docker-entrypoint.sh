@@ -66,21 +66,21 @@ ensure_test_user() {
     fi
 }
 
-# Function to run claude production seed
+# Function to run production seed
 run_mass_test() {
-    echo "🎯 Running Claude Production Seed - Complete Test Environment Creation..."
+    echo "🎯 Running Production Seed - Complete Test Environment Creation..."
     
     # Wait a moment for the server to be fully ready
     sleep 5
     
-    # Run the claude production seed script which creates a comprehensive environment
+    # Run the production seed script which creates a comprehensive environment
     npx ts-node scripts/production-seed.ts
     
     if [ $? -eq 0 ]; then
-        echo "✅ Claude Production Seed completed successfully!"
+        echo "✅ Production Seed completed successfully!"
         echo "🎉 Complete production-style environment created with ranking system working!"
     else
-        echo "❌ Claude Production Seed failed"
+        echo "❌ Production Seed failed"
         exit 1
     fi
 }
@@ -109,7 +109,7 @@ main() {
     
     # Check if we should run the test scenario
     if [ "$RUN_MASS_TEST" = "true" ]; then
-        echo "🎯 Claude Production Seed mode enabled - will create complete production-style environment!"
+        echo "🎯 Production Seed mode enabled - will create complete production-style environment!"
         echo "📊 Creating: 5 companies, 20 jobs, 2 assessment templates, 10 applicants with rankings"
         echo ""
         
