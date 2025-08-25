@@ -8,6 +8,7 @@ import {
 } from "types/assessment"
 import { AssessmentTemplatePool } from "persistence/db/pool/assessment-templates"
 import { ITrueFitEventRelaying } from "services/events"
+import { ServiceError, ServiceErrorType } from "types/serviceError"
 
 export interface IAssessmentTemplateService {
     /**
@@ -103,7 +104,8 @@ class AssessmentTemplateService implements IAssessmentTemplateService {
             template.name,
         )
         if (nameExists) {
-            throw new Error(
+            throw new ServiceError(
+                ServiceErrorType.DuplicateValue,
                 "Template with this name already exists for this job",
             )
         }
@@ -166,7 +168,8 @@ class AssessmentTemplateService implements IAssessmentTemplateService {
                     id,
                 )
                 if (nameExists) {
-                    throw new Error(
+                    throw new ServiceError(
+                        ServiceErrorType.DuplicateValue,
                         "Template with this name already exists for this job",
                     )
                 }

@@ -7,11 +7,15 @@ import {
 import fp from "fastify-plugin"
 import jwt from "jsonwebtoken"
 import { AuthenticatedUser } from "types/user"
+import { ServiceError, ServiceErrorType } from "types/serviceError"
 
 /**
  * Verify JWT token and extract user information
  */
-async function verifyToken(token: string, fastify: FastifyInstance): Promise<AuthenticatedUser> {
+async function verifyToken(
+    token: string,
+    fastify: FastifyInstance,
+): Promise<AuthenticatedUser> {
     try {
         // Use the userService to verify token (it handles JWT verification and session validation)
         const userService = fastify.services.getUserService()
@@ -19,7 +23,11 @@ async function verifyToken(token: string, fastify: FastifyInstance): Promise<Aut
 
         return authenticatedUser
     } catch (error) {
-        throw new Error("Invalid token")
+        throw new ServiceError(
+            ServiceErrorType.Forbidden,
+            "Invalid token",
+            error,
+        )
     }
 }
 
@@ -48,13 +56,12 @@ const JWTAuthenticator: FastifyPluginAsync = async (
         try {
             // Remove Bearer prefix
             token = token.replace("Bearer ", "")
-            
+
             // Verify token and get user
             const user = await verifyToken(token, fastify)
-            
+
             // Attach user to request
             request.user = user
-
         } catch (err) {
             console.log(err)
             fastify.log.error(err, "Token validation failed")
@@ -82,16 +89,19 @@ const JWTAuthenticator: FastifyPluginAsync = async (
     })
 
     // Helper decorator for authentication check
-    fastify.decorate("authenticate", async (request: FastifyRequest, reply: any) => {
-        if (!request.user) {
-            return reply
-                .code(401)
-                .send({ error: "Authentication required" })
-        }
-    })
+    fastify.decorate(
+        "authenticate",
+        async (request: FastifyRequest, reply: any) => {
+            if (!request.user) {
+                return reply
+                    .code(401)
+                    .send({ error: "Authentication required" })
+            }
+        },
+    )
 }
 
 export default fp(JWTAuthenticator, {
     name: "jwt-auth",
-    dependencies: ["services"]
+    dependencies: ["services"],
 })

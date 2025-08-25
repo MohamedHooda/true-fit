@@ -10,6 +10,7 @@ import {
     JobRankingStatus,
 } from "types/candidate-ranking"
 import crypto from "crypto"
+import { ServiceError, ServiceErrorType } from "types/serviceError"
 
 export interface CandidateRankingPool {
     /**
@@ -300,7 +301,10 @@ class CandidateRankingPoolImpl implements CandidateRankingPool {
         })
 
         if (!scoringConfig) {
-            throw new Error("No scoring configuration found")
+            throw new ServiceError(
+                ServiceErrorType.NotFound,
+                "No scoring configuration found",
+            )
         }
 
         // Optimized SQL query to calculate scores

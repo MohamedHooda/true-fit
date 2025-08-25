@@ -240,7 +240,10 @@ class UserService implements IUserService {
             // Check session in database
             const session = await this.pool.getSessionWithUser(payload.jti)
             if (!session) {
-                throw new Error("Invalid or expired session")
+                throw new ServiceError(
+                    ServiceErrorType.Forbidden,
+                    "Invalid or expired session",
+                )
             }
 
             return {
@@ -254,7 +257,10 @@ class UserService implements IUserService {
             }
         } catch (error) {
             console.log(error)
-            throw new Error("Invalid or expired token")
+            throw new ServiceError(
+                ServiceErrorType.Forbidden,
+                "Invalid or expired token",
+            )
         }
     }
 
@@ -292,13 +298,13 @@ class UserService implements IUserService {
         // Get user to verify they exist and get their email
         const userWithSessions = await this.pool.getUserById(userId)
         if (!userWithSessions) {
-            throw new Error("User not found")
+            throw new ServiceError(ServiceErrorType.NotFound, "User not found")
         }
 
         // Get user with password hash for verification
         const user = await this.pool.getUserByEmail(userWithSessions.email)
         if (!user) {
-            throw new Error("User not found")
+            throw new ServiceError(ServiceErrorType.NotFound, "User not found")
         }
 
         // Verify current password
@@ -307,7 +313,10 @@ class UserService implements IUserService {
             user.passwordHash,
         )
         if (!isCurrentPasswordValid) {
-            throw new Error("Current password is incorrect")
+            throw new ServiceError(
+                ServiceErrorType.Forbidden,
+                "Current password is incorrect",
+            )
         }
 
         // Hash new password
