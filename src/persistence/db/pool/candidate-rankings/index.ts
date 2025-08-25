@@ -220,14 +220,23 @@ class CandidateRankingPoolImpl implements CandidateRankingPool {
 
                 const calculationDuration = Date.now() - startTime
 
-                // Update metadata
-                await tx.jobRankingMetadata.update({
+                // Update or create metadata (upsert to handle first-time calculations)
+                await tx.jobRankingMetadata.upsert({
                     where: { jobId },
-                    data: {
+                    create: {
+                        jobId,
                         status: RankingStatus.COMPLETED,
                         totalCandidates: scores.length,
                         lastCalculatedAt: new Date(),
                         calculationDuration,
+                        scoringConfigVersion: configVersion,
+                    },
+                    update: {
+                        status: RankingStatus.COMPLETED,
+                        totalCandidates: scores.length,
+                        lastCalculatedAt: new Date(),
+                        calculationDuration,
+                        scoringConfigVersion: configVersion,
                     },
                 })
 

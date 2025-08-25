@@ -97,6 +97,27 @@ export const SuccessResponseSchema = Type.Object({
     message: Type.String(),
 })
 
+// Answer Distribution Schema
+export const AnswerDistributionSchema = Type.Object({
+    questionId: Type.String(),
+    totalResponses: Type.Number(),
+    distribution: Type.Array(
+        Type.Object({
+            answer: Type.Union([Type.String(), Type.Null()]),
+            count: Type.Number(),
+            percentage: Type.Number(),
+            isCorrect: Type.Boolean(),
+        }),
+    ),
+    commonMistakes: Type.Array(
+        Type.Object({
+            answer: Type.Union([Type.String(), Type.Null()]),
+            count: Type.Number(),
+            percentage: Type.Number(),
+        }),
+    ),
+})
+
 // Error Response Schema
 export const ErrorResponseSchema = Type.Object({
     error: Type.String(),

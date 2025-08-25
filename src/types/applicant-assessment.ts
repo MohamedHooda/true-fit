@@ -45,6 +45,7 @@ export interface ApplicantAssessmentWithDetails extends ApplicantAssessment {
 export interface AssessmentSubmission {
     applicantId: string
     templateId: string
+    jobId: string
     answers: Array<{
         questionId: string
         answer: string

@@ -7,6 +7,8 @@ import {
     AssessmentStats,
 } from "types/applicant-assessment"
 import { ApplicantAssessmentPool } from "persistence/db/pool/applicant-assessments"
+import { JobApplicationPool } from "persistence/db/pool/job-applications"
+import { AssessmentTemplatePool } from "persistence/db/pool/assessment-templates"
 import { ITrueFitEventRelaying, TrueFitEventTypes } from "services/events"
 import { ServiceError, ServiceErrorType } from "types/serviceError"
 
@@ -71,6 +73,8 @@ export interface IApplicantAssessmentService {
 class ApplicantAssessmentService implements IApplicantAssessmentService {
     constructor(
         private readonly pool: ApplicantAssessmentPool,
+        private readonly jobApplicationPool: JobApplicationPool,
+        private readonly assessmentTemplatePool: AssessmentTemplatePool,
         private readonly events: ITrueFitEventRelaying,
     ) {}
 
@@ -138,6 +142,27 @@ class ApplicantAssessmentService implements IApplicantAssessmentService {
             )
         }
 
+        // Ensure assessment template is linked to the job for ranking
+        await this.assessmentTemplatePool.updateAssessmentTemplate(
+            submission.templateId,
+            { jobId: submission.jobId },
+        )
+
+        // Check if job application already exists, if not create one
+        const hasApplied =
+            await this.jobApplicationPool.hasApplicantAppliedToJob(
+                submission.applicantId,
+                submission.jobId,
+            )
+
+        if (!hasApplied) {
+            await this.jobApplicationPool.createJobApplication({
+                applicantId: submission.applicantId,
+                jobId: submission.jobId,
+                status: "APPLIED",
+            })
+        }
+
         const assessment = await this.pool.submitAssessment(submission)
 
         // Emit assessment submitted event for ranking recalculation
@@ -147,7 +172,7 @@ class ApplicantAssessmentService implements IApplicantAssessmentService {
                 assessmentId: assessment.id,
                 applicantId: assessment.applicantId,
                 templateId: assessment.templateId,
-                jobId: assessment.template.job?.id, // Need job ID for ranking
+                jobId: submission.jobId, // Use the provided jobId
                 answersCount: assessment.answers.length,
             },
         })
@@ -203,7 +228,14 @@ class ApplicantAssessmentService implements IApplicantAssessmentService {
 
 export default function getApplicantAssessmentService(
     pool: ApplicantAssessmentPool,
+    jobApplicationPool: JobApplicationPool,
+    assessmentTemplatePool: AssessmentTemplatePool,
     events: ITrueFitEventRelaying,
 ): IApplicantAssessmentService {
-    return new ApplicantAssessmentService(pool, events)
+    return new ApplicantAssessmentService(
+        pool,
+        jobApplicationPool,
+        assessmentTemplatePool,
+        events,
+    )
 }

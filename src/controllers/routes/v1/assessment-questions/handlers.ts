@@ -101,3 +101,22 @@ export const deleteQuestion: RouteHandler<{
         return reply.code(resp.code).send(resp.returnError())
     }
 }
+
+// Get answer distribution for a question
+export const getAnswerDistribution: RouteHandler<{
+    Params: { id: string }
+}> = async function (this, request, reply) {
+    const service = this.services.getAssessmentQuestionService()
+    try {
+        const distribution = await service.getAnswerDistribution(
+            request.params.id,
+        )
+        return { distribution }
+    } catch (err) {
+        const resp = mapToErrorResponse(
+            err,
+            "Failed to get answer distribution",
+        )
+        return reply.code(resp.code).send(resp.returnError())
+    }
+}

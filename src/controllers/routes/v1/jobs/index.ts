@@ -15,6 +15,22 @@ import {
     deleteJobSchema,
     getJobStatsSchema,
 } from "./schemas"
+import {
+    getTopCandidates,
+    recalculateJobRankings,
+    getJobRankingStatus,
+} from "./ranking-handlers"
+import {
+    TopCandidatesResponseSchema,
+    TopCandidatesQuerySchema,
+    JobIdParamsSchema,
+    RankingCalculationRequestSchema,
+    RankingCalculationResultSchema,
+    JobRankingStatusSchema,
+    JobRankingStatusQuerySchema,
+    ErrorResponseSchema,
+    CandidateRankingWithDetailsSchema,
+} from "./ranking-schemas"
 
 const jobs: FastifyPluginAsync = async (fastify): Promise<void> => {
     // Get all jobs with filters
@@ -75,6 +91,48 @@ const jobs: FastifyPluginAsync = async (fastify): Promise<void> => {
             summary: "Delete job",
         },
         handler: deleteJob,
+    })
+
+    // Candidate ranking routes
+    // GET /:jobId/candidates/top - Get top candidates for a job
+    fastify.get<{
+        Params: { jobId: string }
+        Querystring: { limit?: number }
+        Reply: any
+    }>("/:jobId/candidates/top", {
+        schema: {
+            description: "Get top candidates for a specific job",
+            tags: ["Candidate Rankings"],
+            params: JobIdParamsSchema,
+            querystring: TopCandidatesQuerySchema,
+            response: {
+                200: TopCandidatesResponseSchema,
+                400: ErrorResponseSchema,
+                404: ErrorResponseSchema,
+                500: ErrorResponseSchema,
+            },
+        },
+        handler: getTopCandidates,
+    })
+
+    // GET /:jobId/rankings/status - Get ranking status for a job
+    fastify.get<{
+        Params: { jobId: string }
+        Querystring: { includeMetrics?: boolean }
+        Reply: any
+    }>("/:jobId/rankings/status", {
+        schema: {
+            description: "Get ranking calculation status for a specific job",
+            tags: ["Candidate Rankings"],
+            params: JobIdParamsSchema,
+            querystring: JobRankingStatusQuerySchema,
+            response: {
+                200: JobRankingStatusSchema,
+                404: ErrorResponseSchema,
+                500: ErrorResponseSchema,
+            },
+        },
+        handler: getJobRankingStatus,
     })
 }
 

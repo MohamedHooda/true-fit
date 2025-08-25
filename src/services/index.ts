@@ -182,8 +182,18 @@ export class Services implements ServiceRegistry, PoolRegistry {
                 this.db,
                 this.logger,
             )
+            const jobApplicationPool = getJobApplicationPool(
+                this.db,
+                this.logger,
+            )
+            const assessmentTemplatePool = getAssessmentTemplatePool(
+                this.db,
+                this.logger,
+            )
             const applicantAssessmentService = getApplicantAssessmentService(
                 applicantAssessmentPool,
+                jobApplicationPool,
+                assessmentTemplatePool,
                 this.events,
             )
             this.services.set(

@@ -6,6 +6,7 @@ import {
     UpdateAssessmentQuestionRequestSchema,
     SuccessResponseSchema,
     ErrorResponseSchema,
+    AnswerDistributionSchema,
 } from "./schemas"
 import {
     getQuestions,
@@ -13,6 +14,7 @@ import {
     createQuestion,
     updateQuestion,
     deleteQuestion,
+    getAnswerDistribution,
 } from "./handlers"
 
 const assessmentQuestionsRoutes: FastifyPluginAsync = async (fastify) => {
@@ -151,6 +153,35 @@ const assessmentQuestionsRoutes: FastifyPluginAsync = async (fastify) => {
             },
         },
         deleteQuestion,
+    )
+
+    // Get answer distribution for a question
+    fastify.get(
+        "/:id/answers",
+        {
+            schema: {
+                tags: ["Assessment Questions"],
+                summary: "Get answer distribution for a question",
+                params: {
+                    type: "object",
+                    properties: {
+                        id: { type: "string" },
+                    },
+                    required: ["id"],
+                },
+                response: {
+                    200: {
+                        type: "object",
+                        properties: {
+                            distribution: AnswerDistributionSchema,
+                        },
+                    },
+                    404: ErrorResponseSchema,
+                    500: ErrorResponseSchema,
+                },
+            },
+        },
+        getAnswerDistribution,
     )
 }
 

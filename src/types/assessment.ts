@@ -54,6 +54,7 @@ export interface AssessmentTemplateCreate {
 export interface AssessmentTemplateUpdate {
     name?: string
     description?: string | null
+    jobId?: string | null
 }
 
 export interface AssessmentTemplateFilters {
@@ -290,4 +291,20 @@ export interface QuestionAnswerStats {
 export interface CommonAnswer {
     answer: string
     count: number
+}
+
+export interface AnswerDistribution {
+    questionId: string
+    totalResponses: number
+    distribution: Array<{
+        answer: string | null
+        count: number
+        percentage: number
+        isCorrect: boolean
+    }>
+    commonMistakes: Array<{
+        answer: string | null
+        count: number
+        percentage: number
+    }>
 }

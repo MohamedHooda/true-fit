@@ -60,6 +60,7 @@ export const ApplicantAssessmentWithDetailsSchema = Type.Object({
 export const AssessmentSubmissionSchema = Type.Object({
     applicantId: Type.String(),
     templateId: Type.String(),
+    jobId: Type.String(),
     answers: Type.Array(
         Type.Object({
             questionId: Type.String(),

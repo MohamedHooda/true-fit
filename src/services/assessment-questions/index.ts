@@ -3,6 +3,7 @@ import {
     AssessmentQuestionWithDetails,
     AssessmentQuestionCreate,
     AssessmentQuestionUpdate,
+    AnswerDistribution,
 } from "types/assessment"
 import { AssessmentQuestionPool } from "persistence/db/pool/assessment-questions"
 import { ITrueFitEventRelaying } from "services/events"
@@ -48,6 +49,13 @@ export interface IAssessmentQuestionService {
      * @returns {Promise<void>}
      */
     deleteQuestion(id: string): Promise<void>
+
+    /**
+     * Get answer distribution for an assessment question
+     * @param {string} id - The ID of the question
+     * @returns {Promise<AnswerDistribution>} - The answer distribution
+     */
+    getAnswerDistribution(id: string): Promise<AnswerDistribution>
 }
 
 class AssessmentQuestionService implements IAssessmentQuestionService {
@@ -124,6 +132,10 @@ class AssessmentQuestionService implements IAssessmentQuestionService {
             //     }
             // })
         }
+    }
+
+    async getAnswerDistribution(id: string): Promise<AnswerDistribution> {
+        return this.pool.getAnswerDistribution(id)
     }
 }
 

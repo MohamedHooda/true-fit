@@ -6,6 +6,7 @@ import {
     AssessmentQuestionWithDetails,
     AssessmentQuestionCreate,
     AssessmentQuestionUpdate,
+    AnswerDistribution,
 } from "types/assessment"
 
 export interface AssessmentQuestionPool {
@@ -100,6 +101,13 @@ export interface AssessmentQuestionPool {
         order: number,
         excludeId?: string,
     ): Promise<boolean>
+
+    /**
+     * Get answer distribution for an assessment question
+     * @param {string} id - The ID of the question
+     * @returns {Promise<AnswerDistribution>} - The answer distribution
+     */
+    getAnswerDistribution(id: string): Promise<AnswerDistribution>
 }
 
 class AssessmentQuestionPoolImpl implements AssessmentQuestionPool {
@@ -315,6 +323,78 @@ class AssessmentQuestionPoolImpl implements AssessmentQuestionPool {
             })
 
             return !!existing
+        } catch (err) {
+            handleDBError(err, this.logger)
+        }
+    }
+
+    async getAnswerDistribution(id: string): Promise<AnswerDistribution> {
+        try {
+            // Get all answers for this question
+            const answers = await this.prisma.applicantAnswer.findMany({
+                where: { questionId: id },
+                select: {
+                    answer: true,
+                    isCorrect: true,
+                },
+            })
+
+            const totalResponses = answers.length
+            if (totalResponses === 0) {
+                return {
+                    questionId: id,
+                    totalResponses: 0,
+                    distribution: [],
+                    commonMistakes: [],
+                }
+            }
+
+            // Group answers by their value
+            const answerCounts = new Map<
+                string | null,
+                { count: number; isCorrect: boolean }
+            >()
+
+            for (const answer of answers) {
+                const key = answer.answer
+                const existing = answerCounts.get(key) || {
+                    count: 0,
+                    isCorrect: answer.isCorrect,
+                }
+                answerCounts.set(key, {
+                    count: existing.count + 1,
+                    isCorrect: answer.isCorrect,
+                })
+            }
+
+            // Create distribution array
+            const distribution = Array.from(answerCounts.entries())
+                .map(([answer, data]) => ({
+                    answer,
+                    count: data.count,
+                    percentage:
+                        Math.round((data.count / totalResponses) * 100 * 100) /
+                        100,
+                    isCorrect: data.isCorrect,
+                }))
+                .sort((a, b) => b.count - a.count)
+
+            // Get common mistakes (incorrect answers sorted by frequency)
+            const commonMistakes = distribution
+                .filter((item) => !item.isCorrect)
+                .slice(0, 5) // Top 5 mistakes
+                .map((item) => ({
+                    answer: item.answer,
+                    count: item.count,
+                    percentage: item.percentage,
+                }))
+
+            return {
+                questionId: id,
+                totalResponses,
+                distribution,
+                commonMistakes,
+            }
         } catch (err) {
             handleDBError(err, this.logger)
         }

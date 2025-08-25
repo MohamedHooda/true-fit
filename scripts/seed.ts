@@ -3,6 +3,7 @@ dotenv.config()
 
 import { PrismaClient, QuestionType, JobStatus } from "@prisma/client"
 import { faker } from "@faker-js/faker"
+import bcrypt from "bcryptjs"
 
 const prisma = new PrismaClient()
 
@@ -404,9 +405,24 @@ async function main() {
         }
         console.log(`✅ Created ${branches.length} branches`)
 
-        // 3. Create users (one admin per company)
+        // 3. Create users (one admin per company + test user)
         console.log("👥 Creating users...")
         const users: any[] = []
+
+        // Create test user with specified credentials
+        const testUser = await prisma.user.create({
+            data: {
+                email: "user@example.com",
+                firstName: "Test",
+                lastName: "User",
+                passwordHash: await bcrypt.hash("string", 10),
+                role: "ADMIN",
+                companyId: companies[0].id, // Assign to first company
+            },
+        })
+        users.push(testUser)
+
+        // Create admin users for each company
         for (const company of companies) {
             const user = await prisma.user.create({
                 data: {
@@ -415,7 +431,7 @@ async function main() {
                         .replace(/\s+/g, "")}.com`,
                     firstName: "Admin",
                     lastName: company.name.split(" ")[0],
-                    passwordHash: "$2b$10$dummy.hash.for.seeding.purposes.only",
+                    passwordHash: await bcrypt.hash("admin123", 10),
                     role: "ADMIN",
                     companyId: company.id,
                 },

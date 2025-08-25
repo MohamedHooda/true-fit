@@ -1,6 +1,6 @@
 import { Logger } from "types/logging"
 import { ITrueFitEventRelaying, TrueFitEvent, TrueFitEventTypes } from ".."
-import { ServiceRegistry } from "services"
+import { ServiceRegistry } from "../.."
 export function registerEventHandlers(
     logger: Logger,
     events: ITrueFitEventRelaying,
